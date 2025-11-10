@@ -181,9 +181,7 @@
     let currentIndex = 0;
     let errors = [];
 
-    function saveSets() {
-      localStorage.setItem("sets", JSON.stringify(sets));
-    }
+    function saveSets() { localStorage.setItem("sets", JSON.stringify(sets)); }
 
     function goHome() {
       document.querySelectorAll(".container > div").forEach(div => div.classList.add("hidden"));
@@ -202,9 +200,7 @@
         document.getElementById("set-subject").value = currentSet.subject;
         document.getElementById("set-image").value = currentSet.image;
         currentSet.cards.forEach(c => addCardEditor(c.question, c.answer, c.image));
-      } else {
-        currentSet = null;
-      }
+      } else { currentSet = null; }
     }
 
     function addCardEditor(q='', a='', img='') {
@@ -218,7 +214,6 @@
         <hr>
       `;
       document.getElementById("cards-editor").appendChild(div);
-
       div.querySelector(".btn-del-card").onclick = () => div.remove();
     }
 
@@ -227,8 +222,7 @@
       const subject = document.getElementById("set-subject").value;
       const image = document.getElementById("set-image").value;
       const cards = [];
-      const cardDivs = document.querySelectorAll("#cards-editor > .card-editor");
-      cardDivs.forEach(div => {
+      document.querySelectorAll("#cards-editor > .card-editor").forEach(div => {
         const q = div.children[0].value;
         const a = div.children[1].value;
         const img = div.children[2].value;
@@ -240,9 +234,7 @@
         currentSet.subject = subject;
         currentSet.image = image;
         currentSet.cards = cards;
-      } else {
-        sets.push({ title, subject, image, cards });
-      }
+      } else { sets.push({ title, subject, image, cards }); }
 
       saveSets();
       currentSet = null;
@@ -297,9 +289,7 @@
       document.querySelector(".card").classList.remove("flipped");
     }
 
-    function flipCard() {
-      document.querySelector(".card").classList.toggle("flipped");
-    }
+    function flipCard() { document.querySelector(".card").classList.toggle("flipped"); }
 
     function markAnswer(correct) {
       if(!correct) errors.push(currentCards[currentIndex]);
@@ -335,27 +325,31 @@
     }
 
     // --------------------------
-    // Partage : lien Base64 ou fichier JSON
+    // Partage : lien Base64 ou fichier JSON (corrigé)
     // --------------------------
     function shareSet(index) {
       const set = sets[index];
       const choice = prompt("Partager sous forme de :\n1 = Lien Base64\n2 = Fichier JSON", "1");
+
       if(choice === "1"){
         const json = JSON.stringify(set);
         const base64 = btoa(json);
         const link = `${window.location.href.split('?')[0]}?set=${base64}`;
         prompt("Copie ce lien pour partager :", link);
+
       } else if(choice === "2") {
-        const blob = new Blob([JSON.stringify(set, null, 2)], {type: "application/json"});
+        const jsonStr = JSON.stringify(set, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = `${set.title}.json`;
+        document.body.appendChild(a); // indispensable
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      } else {
-        alert("Choix invalide !");
-      }
+
+      } else { alert("Choix invalide !"); }
     }
 
     // --------------------------
