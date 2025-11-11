@@ -55,7 +55,12 @@
     }
     .card-front { background: #fff; }
     .card-back { background: #f0f0f0; transform: rotateY(180deg); }
-    .card-face img { max-width: 90%; max-height: 150px; margin-bottom: 15px; object-fit: contain; }
+    .card-face img {
+      width: 100%;       /* largeur forcée */
+      height: 150px;     /* hauteur identique aux images URL */
+      margin-bottom: 15px;
+      object-fit: cover;  /* remplit le conteneur sans déformation */
+    }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
       flex: 1; margin: 0 5px; padding: 10px;
