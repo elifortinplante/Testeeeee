@@ -5,97 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flashcards App</title>
 <style>
-  body {margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#a18cd1,#fbc2eb,#8fd3f4);min-height:100vh;display:flex;justify-content:center;align-items:center;}
-  .container {width:90%;max-width:800px;background:white;border-radius:20px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);}
-  h1,h2{text-align:center;color:#333;}
-  .hidden{display:none;}
-  .set{display:flex;align-items:center;background:#f3f3f3;border-radius:15px;padding:10px;margin:10px 0;cursor:pointer;transition:0.3s;}
-  .set:hover{background:#e8e8e8;}
-  .set img{width:60px;height:60px;border-radius:12px;object-fit:cover;margin-right:15px;}
-  .set-buttons{margin-left:auto;display:flex;gap:5px;}
-  .card-container{perspective:1000px;margin:20px 0;position:relative;}
-  .card{width:100%;height:350px;position:relative;transform-style:preserve-3d;transition:transform 0.6s;cursor:pointer;}
-  .card.flipped{transform:rotateY(180deg);}
-  .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;font-weight:bold;text-align:center;color:#333;overflow:hidden;}
-  .card-front{background:#fff;}
-  .card-back{background:#f0f0f0;transform:rotateY(180deg);}
-  .card-face img{width:100%;max-height:250px;margin-bottom:15px;object-fit:contain;}
-  .answer-buttons{display:flex;justify-content:space-between;margin-top:20px;}
-  .answer-buttons button{flex:1;margin:0 5px;padding:10px;font-size:18px;border:none;border-radius:12px;cursor:pointer;transition:0.3s;}
-  .correct{background:#a0e7a0;}
-  .incorrect{background:#f28b82;}
-  .correct:hover{background:#77d677;}
-  .incorrect:hover{background:#e06666;}
-  #score-screen{text-align:center;}
-  #score-screen button{margin:10px;padding:12px 20px;font-size:16px;border:none;border-radius:12px;cursor:pointer;background:#a18cd1;color:white;transition:0.3s;}
-  #score-screen button:hover{background:#875fb3;}
-  .card-editor{margin-bottom:10px;}
-  .card-editor input{display:block;width:95%;margin-bottom:5px;}
-  .drag-resize {position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:move;border:1px dashed #aaa;padding:5px;border-radius:10px;background:rgba(255,255,255,0.8);}
+body {margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#a18cd1,#fbc2eb,#8fd3f4);min-height:100vh;display:flex;justify-content:center;align-items:center;}
+.container {width:90%;max-width:800px;background:white;border-radius:20px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);}
+h1,h2{text-align:center;color:#333;}
+.hidden{display:none;}
+.set{display:flex;align-items:center;background:#f3f3f3;border-radius:15px;padding:10px;margin:10px 0;cursor:pointer;transition:0.3s;}
+.set:hover{background:#e8e8e8;}
+.set img{width:60px;height:60px;border-radius:12px;object-fit:cover;margin-right:15px;}
+.set-buttons{margin-left:auto;display:flex;gap:5px;}
+.card-container{perspective:1000px;margin:20px 0;position:relative;}
+.card{width:100%;height:350px;position:relative;transform-style:preserve-3d;transition:transform 0.6s;cursor:pointer;}
+.card.flipped{transform:rotateY(180deg);}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;font-weight:bold;text-align:center;color:#333;overflow:hidden;}
+.card-front{background:#fff;}
+.card-back{background:#f0f0f0;transform:rotateY(180deg);}
+.card-face img{width:100%;max-height:250px;margin-bottom:15px;object-fit:contain;cursor:move;}
+.answer-buttons{display:flex;justify-content:space-between;margin-top:20px;}
+.answer-buttons button{flex:1;margin:0 5px;padding:10px;font-size:18px;border:none;border-radius:12px;cursor:pointer;transition:0.3s;}
+.correct{background:#a0e7a0;}
+.incorrect{background:#f28b82;}
+.correct:hover{background:#77d677;}
+.incorrect:hover{background:#e06666;}
+#score-screen{text-align:center;}
+#score-screen button{margin:10px;padding:12px 20px;font-size:16px;border:none;border-radius:12px;cursor:pointer;background:#a18cd1;color:white;transition:0.3s;}
+#score-screen button:hover{background:#875fb3;}
+.card-editor{margin-bottom:10px;}
+.card-editor input{display:block;width:95%;margin-bottom:5px;}
+#test-preview{position:relative;width:100%;height:350px;margin-top:20px;border:1px solid #ccc;}
+.draggable{position:absolute;cursor:move;}
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- Accueil -->
-  <div id="home-screen">
-    <h1>Mes Sets</h1>
-    <button onclick="showSetEditor()">➕ Nouveau set</button>
-    <button onclick="document.getElementById('import-file').click()">📥 Importer un set</button>
-    <button onclick="exportAllSets()">💾 Exporter tous les sets</button>
-    <input type="file" id="import-file" class="hidden" onchange="importSet(event)">
-    <div id="sets-list"></div>
-  </div>
+<!-- Accueil -->
+<div id="home-screen">
+<h1>Mes Sets</h1>
+<button onclick="showSetEditor()">➕ Nouveau set</button>
+<button onclick="document.getElementById('import-file').click()">📥 Importer un set</button>
+<button onclick="exportAllSets()">💾 Exporter tous les sets</button>
+<input type="file" id="import-file" class="hidden" onchange="importSet(event)">
+<div id="sets-list"></div>
+</div>
 
-  <!-- Éditeur -->
-  <div id="editor-screen" class="hidden">
-    <h2>Créer / Modifier un Set</h2>
-    <input type="text" id="set-title" placeholder="Titre du set"><br><br>
-    <input type="text" id="set-subject" placeholder="Matière"><br><br>
-    <input type="text" id="set-image" placeholder="URL image pour l’accueil">
-    <input type="file" accept="image/*" id="set-image-file" style="display:none">
-    <button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
-    <div id="cards-editor"></div>
-    <button onclick="addCardEditor()">➕ Ajouter une carte</button><br><br>
-    <button onclick="toggleTestMode()">🧪 Mode Test</button>
-    <button onclick="saveSet()">💾 Sauvegarder</button>
-    <button onclick="goHome()">🏠 Accueil</button>
-    <div id="test-preview" class="hidden" style="position:relative;width:100%;height:350px;margin-top:20px;border:1px solid #ccc;"></div>
-  </div>
+<!-- Éditeur -->
+<div id="editor-screen" class="hidden">
+<h2>Créer / Modifier un Set</h2>
+<input type="text" id="set-title" placeholder="Titre du set"><br><br>
+<input type="text" id="set-subject" placeholder="Matière"><br><br>
+<input type="text" id="set-image" placeholder="URL image pour l’accueil">
+<input type="file" accept="image/*" id="set-image-file" style="display:none">
+<button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
+<div id="cards-editor"></div>
+<button onclick="addCardEditor()">➕ Ajouter une carte</button><br><br>
+<button onclick="toggleTestMode()">🧪 Mode Test</button>
+<button onclick="saveSet()">💾 Sauvegarder</button>
+<button onclick="goHome()">🏠 Accueil</button>
+<div id="test-preview" class="hidden"></div>
+</div>
 
-  <!-- Jeu -->
-  <div id="game-screen" class="hidden">
-    <h2 id="game-title"></h2>
-    <div class="card-container">
-      <div class="card" onclick="flipCard()">
-        <div class="card-face card-front">
-          <img id="card-image-front" alt="">
-          <div id="card-question"></div>
-        </div>
-        <div class="card-face card-back">
-          <img id="card-image-back" alt="">
-          <div id="card-answer"></div>
-        </div>
-      </div>
-    </div>
-    <div class="answer-buttons">
-      <button class="incorrect" onclick="markAnswer(false)">Mauvais</button>
-      <button class="correct" onclick="markAnswer(true)">Bon</button>
-    </div>
-  </div>
+<!-- Jeu -->
+<div id="game-screen" class="hidden">
+<h2 id="game-title"></h2>
+<div class="card-container">
+<div class="card" onclick="flipCard()">
+<div class="card-face card-front">
+<img id="card-image-front" alt="">
+<div id="card-question"></div>
+</div>
+<div class="card-face card-back">
+<img id="card-image-back" alt="">
+<div id="card-answer"></div>
+</div>
+</div>
+</div>
+<div class="answer-buttons">
+<button class="incorrect" onclick="markAnswer(false)">Mauvais</button>
+<button class="correct" onclick="markAnswer(true)">Bon</button>
+</div>
+</div>
 
-  <!-- Score -->
-  <div id="score-screen" class="hidden">
-    <h2>Résultat</h2>
-    <p id="final-score"></p>
-    <button onclick="restartAll()">🔄 Recommencer tout</button>
-    <button onclick="restartErrors()">❌ Rejouer erreurs</button>
-    <button onclick="goHome()">🏠 Accueil</button>
-  </div>
+<!-- Score -->
+<div id="score-screen" class="hidden">
+<h2>Résultat</h2>
+<p id="final-score"></p>
+<button onclick="restartAll()">🔄 Recommencer tout</button>
+<button onclick="restartErrors()">❌ Rejouer erreurs</button>
+<button onclick="goHome()">🏠 Accueil</button>
+</div>
 </div>
 
 <script>
-let sets = JSON.parse(localStorage.getItem("sets"))||[];
+let sets=JSON.parse(localStorage.getItem("sets"))||[];
 let currentSet=null,currentCards=[],currentIndex=0,errors=[];
 let testMode=false,currentTestCard=0;
 
@@ -103,11 +104,7 @@ let testMode=false,currentTestCard=0;
 function saveSets(){localStorage.setItem("sets",JSON.stringify(sets));}
 
 // Accueil
-function goHome(){
-  document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));
-  document.getElementById("home-screen").classList.remove("hidden");
-  displaySets();
-}
+function goHome(){document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("home-screen").classList.remove("hidden");displaySets();}
 
 // Éditeur
 function showSetEditor(setIndex=null){
@@ -138,20 +135,19 @@ function addCardEditor(q='',a='',img=''){
   const div=document.createElement("div");
   div.className="card-editor";
   div.innerHTML=`
-    <input type="text" placeholder="Question" value="${q}">
-    <input type="text" placeholder="Réponse" value="${a}">
-    <input type="text" placeholder="URL image ou vide" value="${img}">
-    <input type="file" accept="image/*" class="img-upload" style="display:none">
-    <button class="btn-photo">📸 Galerie</button>
-    <button class="btn-del-card">🗑️ Supprimer cette carte</button><hr>`;
+  <input type="text" placeholder="Question" value="${q}">
+  <input type="text" placeholder="Réponse" value="${a}">
+  <input type="text" placeholder="URL image ou vide" value="${img}">
+  <input type="file" accept="image/*" class="img-upload" style="display:none">
+  <button class="btn-photo">📸 Galerie</button>
+  <button class="btn-del-card">🗑️ Supprimer cette carte</button><hr>`;
   document.getElementById("cards-editor").appendChild(div);
 
   const imgInput=div.querySelector(".img-upload");
   const urlInput=div.children[2];
-
   div.querySelector(".btn-photo").onclick=()=>imgInput.click();
   imgInput.onchange=(e)=>{
-    const file=e.target.files[0]; if(!file)return;
+    const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=(ev)=>{urlInput.value=ev.target.result;};
     reader.readAsDataURL(file);
@@ -178,15 +174,11 @@ function saveSet(){
 
 // Affichage sets
 function displaySets(){
-  const list=document.getElementById("sets-list");
-  list.innerHTML="";
+  const list=document.getElementById("sets-list");list.innerHTML="";
   sets.forEach((s,i)=>{
-    const div=document.createElement("div");
-    div.className="set";
-    div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}">
-                   <div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`;
+    const div=document.createElement("div");div.className="set";
+    div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}"><div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`;
     div.onclick=()=>startGame(i);
-
     const btnDiv=document.createElement("div");btnDiv.className="set-buttons";
     const editBtn=document.createElement("button");editBtn.textContent="✏️ Modifier";editBtn.onclick=e=>{e.stopPropagation();showSetEditor(i);};
     const delBtn=document.createElement("button");delBtn.textContent="🗑️ Supprimer";delBtn.onclick=e=>{e.stopPropagation();sets.splice(i,1);saveSets();displaySets();};
@@ -205,19 +197,15 @@ function displaySets(){
   });
 }
 
-// Mode Test
+// Mode Test 3D
 function toggleTestMode(){
   const preview=document.getElementById("test-preview");
   if(testMode){preview.classList.add("hidden");testMode=false;return;}
   if(document.querySelectorAll("#cards-editor>.card-editor").length===0){alert("Ajouter au moins une carte pour tester !");return;}
-  testMode=true;
-  preview.innerHTML="";
-  preview.classList.remove("hidden");
-  currentTestCard=0;
-  showTestCard();
+  testMode=true;preview.innerHTML="";preview.classList.remove("hidden");currentTestCard=0;showTestCard3D();
 }
 
-function showTestCard(){
+function showTestCard3D(){
   const preview=document.getElementById("test-preview");
   preview.innerHTML="";
   const editor=document.querySelectorAll("#cards-editor>.card-editor")[currentTestCard];
@@ -225,24 +213,28 @@ function showTestCard(){
   const a=editor.children[1].value;
   const imgSrc=editor.children[2].value;
 
-  const cardDiv=document.createElement("div");
-  cardDiv.style.position="relative";cardDiv.style.width="100%";cardDiv.style.height="100%";cardDiv.style.border="1px solid #aaa";cardDiv.style.borderRadius="15px";cardDiv.style.background="#fff";cardDiv.style.display="flex";cardDiv.style.flexDirection="column";cardDiv.style.alignItems="center";cardDiv.style.justifyContent="center";
+  const cardDiv=document.createElement("div");cardDiv.className="card";cardDiv.style.width="100%";cardDiv.style.height="100%";
+  cardDiv.onclick=()=>cardDiv.classList.toggle("flipped");
 
-  const img=document.createElement("img");img.src=imgSrc;img.style.maxHeight="250px";img.style.objectFit="contain";img.className="draggable";
-  const question=document.createElement("div");question.textContent=q;question.style.fontSize="28px";question.style.textAlign="center";question.style.cursor="move";question.className="draggable";
-  const answer=document.createElement("div");answer.textContent=a;answer.style.fontSize="24px";answer.style.textAlign="center";answer.style.cursor="move";answer.className="draggable";
+  const front=document.createElement("div");front.className="card-face card-front";
+  const back=document.createElement("div");back.className="card-face card-back";
 
-  cardDiv.appendChild(img);cardDiv.appendChild(question);cardDiv.appendChild(answer);
+  const imgFront=document.createElement("img");imgFront.src=imgSrc;imgFront.className="draggable";front.appendChild(imgFront);
+  const textQ=document.createElement("div");textQ.textContent=q;textQ.className="draggable";textQ.style.fontSize="28px";front.appendChild(textQ);
+
+  const imgBack=document.createElement("img");imgBack.src=imgSrc;imgBack.className="draggable";back.appendChild(imgBack);
+  const textA=document.createElement("div");textA.textContent=a;textA.className="draggable";textA.style.fontSize="24px";back.appendChild(textA);
+
+  cardDiv.appendChild(front);cardDiv.appendChild(back);
   preview.appendChild(cardDiv);
 
-  // Drag simple
-  const draggables=[img,question,answer];
-  draggables.forEach(el=>{
+  // Drag simple pour tous les draggables
+  [imgFront,textQ,imgBack,textA].forEach(el=>{
     el.onmousedown=function(e){
       e.preventDefault();
       let shiftX=e.clientX-el.getBoundingClientRect().left;
       let shiftY=e.clientY-el.getBoundingClientRect().top;
-      function moveAt(pageX,pageY){el.style.position="absolute";el.style.zIndex=1000;el.style.left=pageX-shiftX-preview.getBoundingClientRect().left+"px";el.style.top=pageY-shiftY-preview.getBoundingClientRect().top+"px";}
+      function moveAt(pageX,pageY){el.style.position="absolute";el.style.left=pageX-shiftX-preview.getBoundingClientRect().left+"px";el.style.top=pageY-shiftY-preview.getBoundingClientRect().top+"px";}
       function onMouseMove(ev){moveAt(ev.pageX,ev.pageY);}
       document.addEventListener("mousemove",onMouseMove);
       document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
@@ -250,16 +242,15 @@ function showTestCard(){
     el.ondragstart=function(){return false;};
   });
 
-  // Simple navigation carte
+  // Navigation carte
   if(document.querySelectorAll("#cards-editor>.card-editor").length>1){
     const nextBtn=document.createElement("button");nextBtn.textContent="➡️";nextBtn.style.position="absolute";nextBtn.style.bottom="5px";nextBtn.style.right="5px";
-    nextBtn.onclick=()=>{currentTestCard=(currentTestCard+1)%document.querySelectorAll("#cards-editor>.card-editor").length;showTestCard();}
+    nextBtn.onclick=()=>{currentTestCard=(currentTestCard+1)%document.querySelectorAll("#cards-editor>.card-editor").length;showTestCard3D();}
     preview.appendChild(nextBtn);
   }
 }
 
-// Ici reste le code du jeu et score comme avant...
-
+// Ici reste le code du jeu et score inchangé (flipCard, markAnswer, etc.)
 </script>
 </body>
 </html>
