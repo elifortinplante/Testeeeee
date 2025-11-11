@@ -160,7 +160,7 @@
       } else { currentSet = null; }
     }
 
-    // ✅ Ajout du bouton Galerie
+    // Ajout du bouton Galerie pour chaque carte
     function addCardEditor(q='', a='', img='') {
       const div = document.createElement("div");
       div.className = "card-editor";
@@ -183,9 +183,7 @@
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
-          urlInput.value = ev.target.result; // Image en base64
-        };
+        reader.onload = (ev) => { urlInput.value = ev.target.result; };
         reader.readAsDataURL(file);
       };
 
@@ -230,8 +228,37 @@
         delBtn.textContent = "🗑️ Supprimer";
         delBtn.onclick = e => { e.stopPropagation(); deleteSet(i); };
 
+        const shareBtn = document.createElement("button");
+        shareBtn.textContent = "📤 Partager";
+        shareBtn.onclick = async e => {
+          e.stopPropagation();
+          const jsonStr = JSON.stringify(sets[i], null, 2);
+          const blob = new Blob([jsonStr], { type: "application/json" });
+          const file = new File([blob], `${sets[i].title.replace(/[^a-z0-9]/gi, "_") || "set"}.json`, { type: "application/json" });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({ files: [file], title: sets[i].title, text: "Voici mon set de flashcards !" });
+              alert("✅ Set partagé ou enregistré avec succès !");
+              return;
+            } catch(err){ console.log("Partage annulé ou erreur :", err); }
+          }
+
+          // Téléchargement classique pour PC
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${sets[i].title.replace(/[^a-z0-9]/gi, "_") || "set"}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          alert("✅ Fichier téléchargé avec succès !");
+        };
+
         buttonsDiv.appendChild(editBtn);
         buttonsDiv.appendChild(delBtn);
+        buttonsDiv.appendChild(shareBtn);
         div.appendChild(buttonsDiv);
         list.appendChild(div);
       });
@@ -243,7 +270,7 @@
       }
     }
 
-    // ✅ Mélange aléatoire des cartes
+    // Mélange aléatoire des cartes
     function startGame(i){
       currentSet = sets[i];
       currentCards = [...currentSet.cards];
@@ -262,9 +289,6 @@
       const card = currentCards[currentIndex];
       const frontImg = document.getElementById("card-image-front");
       const backImg = document.getElementById("card-image-back");
-      const frontFace = document.querySelector(".card-front");
-      const backFace = document.querySelector(".card-back");
-
       document.getElementById("card-question").textContent = card.question;
       document.getElementById("card-answer").textContent = card.answer;
 
@@ -292,6 +316,19 @@
       currentCards=[...errors]; currentIndex=0; errors=[];
       document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
       document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
+
+    function importSet(event){
+      const file = event.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try{
+          const importedSet = JSON.parse(e.target.result);
+          sets.push(importedSet); saveSets(); displaySets();
+          alert("Set importé avec succès !");
+        }catch(err){ alert("Erreur : fichier invalide !"); }
+      };
+      reader.readAsText(file);
+    }
 
     goHome();
   </script>
