@@ -51,10 +51,11 @@
       justify-content: center; align-items: center;
       padding: 20px; box-sizing: border-box;
       font-weight: bold; text-align: center; color: #333;
+      overflow: hidden;
     }
     .card-front { background: #fff; }
     .card-back { background: #f0f0f0; transform: rotateY(180deg); }
-    .card-face img { max-width: 100%; max-height: 150px; margin-bottom: 15px; object-fit: contain; }
+    .card-face img { max-width: 90%; max-height: 150px; margin-bottom: 15px; object-fit: contain; }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
       flex: 1; margin: 0 5px; padding: 10px;
@@ -94,7 +95,12 @@
       <h2>Créer / Modifier un Set</h2>
       <input type="text" id="set-title" placeholder="Titre du set"><br><br>
       <input type="text" id="set-subject" placeholder="Matière"><br><br>
-      <input type="text" id="set-image" placeholder="URL image pour l’accueil"><br><br>
+
+      <!-- Image couverture -->
+      <input type="text" id="set-image" placeholder="URL image pour l’accueil">
+      <input type="file" accept="image/*" id="set-image-file" style="display:none">
+      <button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
+
       <div id="cards-editor"></div>
       <button onclick="addCardEditor()">➕ Ajouter une carte</button><br><br>
       <button onclick="saveSet()">💾 Sauvegarder</button>
@@ -151,6 +157,16 @@
       document.querySelectorAll(".container > div").forEach(div => div.classList.add("hidden"));
       document.getElementById("editor-screen").classList.remove("hidden");
       document.getElementById("cards-editor").innerHTML = "";
+
+      // Gestion image couverture depuis galerie
+      document.getElementById("set-image-file").onchange = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => { document.getElementById("set-image").value = ev.target.result; };
+        reader.readAsDataURL(file);
+      };
+
       if(setIndex !== null){
         currentSet = sets[setIndex];
         document.getElementById("set-title").value = currentSet.title;
@@ -160,7 +176,6 @@
       } else { currentSet = null; }
     }
 
-    // Ajout du bouton Galerie pour chaque carte
     function addCardEditor(q='', a='', img='') {
       const div = document.createElement("div");
       div.className = "card-editor";
@@ -244,7 +259,6 @@
             } catch(err){ console.log("Partage annulé ou erreur :", err); }
           }
 
-          // Téléchargement classique pour PC
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -270,7 +284,7 @@
       }
     }
 
-    // Mélange aléatoire des cartes
+    // Mélange aléatoire
     function startGame(i){
       currentSet = sets[i];
       currentCards = [...currentSet.cards];
@@ -289,6 +303,9 @@
       const card = currentCards[currentIndex];
       const frontImg = document.getElementById("card-image-front");
       const backImg = document.getElementById("card-image-back");
+      const frontFace = document.querySelector(".card-front");
+      const backFace = document.querySelector(".card-back");
+
       document.getElementById("card-question").textContent = card.question;
       document.getElementById("card-answer").textContent = card.answer;
 
@@ -298,6 +315,19 @@
       } else {
         frontImg.style.display="none"; backImg.style.display="none";
       }
+
+      // Ajustement texte identique pour URL ou galerie
+      function adjustFontSize(face){
+        let fontSize = 28;
+        const minFontSize = 12;
+        face.style.fontSize = fontSize+"px";
+        while(face.scrollHeight > face.clientHeight && fontSize > minFontSize){
+          fontSize--;
+          face.style.fontSize = fontSize+"px";
+        }
+      }
+      adjustFontSize(frontFace);
+      adjustFontSize(backFace);
 
       document.querySelector(".card").classList.remove("flipped");
     }
