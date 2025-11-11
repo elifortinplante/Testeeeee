@@ -19,7 +19,7 @@ h1,h2{text-align:center;color:#333;}
 .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;font-weight:bold;text-align:center;color:#333;overflow:hidden;}
 .card-front{background:#fff;}
 .card-back{background:#f0f0f0;transform:rotateY(180deg);}
-.card-face img{width:100%;max-height:250px;margin-bottom:15px;object-fit:contain;cursor:move;}
+.card-face img{width:100%;max-height:250px;margin-bottom:15px;object-fit:contain;}
 .answer-buttons{display:flex;justify-content:space-between;margin-top:20px;}
 .answer-buttons button{flex:1;margin:0 5px;padding:10px;font-size:18px;border:none;border-radius:12px;cursor:pointer;transition:0.3s;}
 .correct{background:#a0e7a0;}
@@ -31,8 +31,9 @@ h1,h2{text-align:center;color:#333;}
 #score-screen button:hover{background:#875fb3;}
 .card-editor{margin-bottom:10px;}
 .card-editor input{display:block;width:95%;margin-bottom:5px;}
-#test-preview{position:relative;width:100%;height:350px;margin-top:20px;border:1px solid #ccc;}
+#test-preview{position:relative;width:100%;height:350px;margin-top:20px;border:1px solid #ccc;overflow:hidden;}
 .draggable{position:absolute;cursor:move;}
+.resizer{width:15px;height:15px;background:#888;position:absolute;right:0;bottom:0;cursor:se-resize;z-index:10;}
 </style>
 </head>
 <body>
@@ -197,12 +198,37 @@ function displaySets(){
   });
 }
 
-// Mode Test 3D
+// Mode Test 3D avec drag + resize
 function toggleTestMode(){
   const preview=document.getElementById("test-preview");
   if(testMode){preview.classList.add("hidden");testMode=false;return;}
   if(document.querySelectorAll("#cards-editor>.card-editor").length===0){alert("Ajouter au moins une carte pour tester !");return;}
   testMode=true;preview.innerHTML="";preview.classList.remove("hidden");currentTestCard=0;showTestCard3D();
+}
+
+function makeDraggableResizable(el, container){
+  el.style.position="absolute"; el.style.cursor="move";
+  el.onmousedown=function(e){
+    e.preventDefault();
+    const rect=el.getBoundingClientRect();
+    const offsetX=e.clientX-rect.left, offsetY=e.clientY-rect.top;
+    function moveAt(pageX,pageY){el.style.left=pageX-offsetX-container.getBoundingClientRect().left+"px"; el.style.top=pageY-offsetY-container.getBoundingClientRect().top+"px";}
+    function onMouseMove(ev){moveAt(ev.pageX,ev.pageY);}
+    document.addEventListener("mousemove",onMouseMove);
+    document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
+  };
+  el.ondragstart=function(){return false;};
+
+  const resizer=document.createElement("div");
+  resizer.className="resizer";
+  el.appendChild(resizer);
+  resizer.onmousedown=function(e){
+    e.stopPropagation(); e.preventDefault();
+    const startWidth=el.offsetWidth, startHeight=el.offsetHeight, startX=e.clientX, startY=e.clientY;
+    function onMouseMove(ev){el.style.width=startWidth+(ev.clientX-startX)+"px"; el.style.height=startHeight+(ev.clientY-startY)+"px";}
+    document.addEventListener("mousemove",onMouseMove);
+    document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
+  };
 }
 
 function showTestCard3D(){
@@ -219,30 +245,16 @@ function showTestCard3D(){
   const front=document.createElement("div");front.className="card-face card-front";
   const back=document.createElement("div");back.className="card-face card-back";
 
-  const imgFront=document.createElement("img");imgFront.src=imgSrc;imgFront.className="draggable";front.appendChild(imgFront);
-  const textQ=document.createElement("div");textQ.textContent=q;textQ.className="draggable";textQ.style.fontSize="28px";front.appendChild(textQ);
+  const imgFront=document.createElement("img");imgFront.src=imgSrc; front.appendChild(imgFront);
+  const textQ=document.createElement("div");textQ.textContent=q;textQ.style.fontSize="28px"; front.appendChild(textQ);
 
-  const imgBack=document.createElement("img");imgBack.src=imgSrc;imgBack.className="draggable";back.appendChild(imgBack);
-  const textA=document.createElement("div");textA.textContent=a;textA.className="draggable";textA.style.fontSize="24px";back.appendChild(textA);
+  const imgBack=document.createElement("img");imgBack.src=imgSrc; back.appendChild(imgBack);
+  const textA=document.createElement("div");textA.textContent=a;textA.style.fontSize="24px"; back.appendChild(textA);
 
-  cardDiv.appendChild(front);cardDiv.appendChild(back);
-  preview.appendChild(cardDiv);
+  cardDiv.appendChild(front);cardDiv.appendChild(back); preview.appendChild(cardDiv);
 
-  // Drag simple pour tous les draggables
-  [imgFront,textQ,imgBack,textA].forEach(el=>{
-    el.onmousedown=function(e){
-      e.preventDefault();
-      let shiftX=e.clientX-el.getBoundingClientRect().left;
-      let shiftY=e.clientY-el.getBoundingClientRect().top;
-      function moveAt(pageX,pageY){el.style.position="absolute";el.style.left=pageX-shiftX-preview.getBoundingClientRect().left+"px";el.style.top=pageY-shiftY-preview.getBoundingClientRect().top+"px";}
-      function onMouseMove(ev){moveAt(ev.pageX,ev.pageY);}
-      document.addEventListener("mousemove",onMouseMove);
-      document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
-    };
-    el.ondragstart=function(){return false;};
-  });
+  [imgFront,textQ,imgBack,textA].forEach(el=>makeDraggableResizable(el,preview));
 
-  // Navigation carte
   if(document.querySelectorAll("#cards-editor>.card-editor").length>1){
     const nextBtn=document.createElement("button");nextBtn.textContent="➡️";nextBtn.style.position="absolute";nextBtn.style.bottom="5px";nextBtn.style.right="5px";
     nextBtn.onclick=()=>{currentTestCard=(currentTestCard+1)%document.querySelectorAll("#cards-editor>.card-editor").length;showTestCard3D();}
@@ -250,7 +262,22 @@ function showTestCard3D(){
   }
 }
 
-// Ici reste le code du jeu et score inchangé (flipCard, markAnswer, etc.)
+// Jeu et score (flip, markAnswer, etc.) restent inchangés
+function startGame(i){currentSet=sets[i];currentCards=[...currentSet.cards];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");document.getElementById("game-title").textContent=currentSet.title;showCard();}
+function showCard(){const card=currentCards[currentIndex];const frontImg=document.getElementById("card-image-front");const backImg=document.getElementById("card-image-back");const frontFace=document.querySelector(".card-front");const backFace=document.querySelector(".card-back");document.getElementById("card-question").textContent=card.question;document.getElementById("card-answer").textContent=card.answer;if(card.image){frontImg.src=card.image;frontImg.style.display="block";backImg.src=card.image;backImg.style.display="block";}else{frontImg.style.display="none";backImg.style.display="none";}
+function adjustFontSize(face){let fontSize=28;const minFontSize=12;face.style.fontSize=fontSize+"px";while(face.scrollHeight>face.clientHeight&&fontSize>minFontSize){fontSize--;face.style.fontSize=fontSize+"px";}}
+adjustFontSize(frontFace);adjustFontSize(backFace);document.querySelector(".card").classList.remove("flipped");}
+function flipCard(){document.querySelector(".card").classList.toggle("flipped");}
+function markAnswer(correct){if(!correct)errors.push(currentCards[currentIndex]);currentIndex++;if(currentIndex<currentCards.length)showCard();else endGame();}
+function endGame(){document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("score-screen").classList.remove("hidden");document.getElementById("final-score").textContent=`Score: ${currentCards.length-errors.length}/${currentCards.length}`;}
+function restartAll(){currentCards=[...currentSet.cards];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");showCard();}
+function restartErrors(){if(errors.length===0){alert("Aucune erreur à rejouer !");return;}currentCards=[...errors];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");showCard();}
+
+// Import / export
+function importSet(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){try{const importedSet=JSON.parse(e.target.result);sets.push(importedSet);saveSets();displaySets();alert("Set importé !");}catch(err){alert("Fichier invalide !");}};reader.readAsText(file);}
+function exportAllSets(){if(sets.length===0){alert("Aucun set !");return;}if(!confirm("Exporter tous les sets ?"))return;const jsonStr=JSON.stringify(sets,null,2);const blob=new Blob([jsonStr],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="mes_sets_flashcards.json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert("✅ Fichier téléchargé !");}
+
+goHome();
 </script>
 </body>
 </html>
