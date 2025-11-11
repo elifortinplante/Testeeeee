@@ -59,7 +59,7 @@
       width: 100%;       /* largeur forcée */
       height: 150px;     /* hauteur identique aux images URL */
       margin-bottom: 15px;
-      object-fit: cover;  /* remplit le conteneur sans déformation */
+      object-fit: contain;  /* image entière, pas de découpe, proportions gardées */
     }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
@@ -163,7 +163,7 @@
       document.getElementById("editor-screen").classList.remove("hidden");
       document.getElementById("cards-editor").innerHTML = "";
 
-      // Gestion image couverture depuis galerie
+      // Image couverture galerie
       document.getElementById("set-image-file").onchange = (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -321,7 +321,6 @@
         frontImg.style.display="none"; backImg.style.display="none";
       }
 
-      // Ajustement texte identique pour URL ou galerie
       function adjustFontSize(face){
         let fontSize = 28;
         const minFontSize = 12;
