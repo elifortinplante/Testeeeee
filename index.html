@@ -160,16 +160,35 @@
       } else { currentSet = null; }
     }
 
+    // ✅ Ajout du bouton Galerie
     function addCardEditor(q='', a='', img='') {
       const div = document.createElement("div");
       div.className = "card-editor";
       div.innerHTML = `
         <input type="text" placeholder="Question" value="${q}">
         <input type="text" placeholder="Réponse" value="${a}">
-        <input type="text" placeholder="URL image" value="${img}">
+        <input type="text" placeholder="URL image ou vide" value="${img}">
+        <input type="file" accept="image/*" class="img-upload" style="display:none">
+        <button class="btn-photo">📸 Galerie</button>
         <button class="btn-del-card">🗑️ Supprimer cette carte</button>
         <hr>`;
       document.getElementById("cards-editor").appendChild(div);
+
+      const imgInput = div.querySelector(".img-upload");
+      const urlInput = div.children[2];
+
+      div.querySelector(".btn-photo").onclick = () => imgInput.click();
+
+      imgInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          urlInput.value = ev.target.result; // Image en base64
+        };
+        reader.readAsDataURL(file);
+      };
+
       div.querySelector(".btn-del-card").onclick = () => div.remove();
     }
 
@@ -211,13 +230,8 @@
         delBtn.textContent = "🗑️ Supprimer";
         delBtn.onclick = e => { e.stopPropagation(); deleteSet(i); };
 
-        const shareBtn = document.createElement("button");
-        shareBtn.textContent = "📤 Partager";
-        shareBtn.onclick = e => { e.stopPropagation(); exportSet(i); };
-
         buttonsDiv.appendChild(editBtn);
         buttonsDiv.appendChild(delBtn);
-        buttonsDiv.appendChild(shareBtn);
         div.appendChild(buttonsDiv);
         list.appendChild(div);
       });
@@ -229,100 +243,15 @@
       }
     }
 
-    // 🆕 Nouvelle version de exportSet avec menu iPhone (Fichiers, AirDrop, etc.)
-    async function exportSet(i) {
-      const set = sets[i];
-      if (!set) return;
-
-      const jsonStr = JSON.stringify(set, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const file = new File([blob], `${set.title.replace(/[^a-z0-9]/gi, "_") || "set"}.json`, { type: "application/json" });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: set.title,
-            text: "Voici mon set de flashcards !"
-          });
-          alert("✅ Set partagé ou enregistré avec succès !");
-          return;
-        } catch (err) {
-          console.log("Partage annulé ou erreur :", err);
-        }
-      }
-
-      // 🖥️ Téléchargement classique (PC)
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${set.title.replace(/[^a-z0-9]/gi, "_") || "set"}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      alert("✅ Fichier téléchargé avec succès !");
-    }
-
-    // ✅ Export de tous les sets (inchangé)
-    function exportAllSets() {
-      if (sets.length === 0) {
-        alert("Aucun set à exporter !");
-        return;
-      }
-
-      if (!confirm("Voulez-vous vraiment exporter tous vos sets dans un fichier ?")) {
-        return;
-      }
-
-      const jsonStr = JSON.stringify(sets, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "mes_sets_flashcards.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      alert("✅ Fichier téléchargé avec succès !");
-    }
-
-    function importSet(event){
-      const file = event.target.files[0]; if(!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e){
-        try{
-          const importedSet = JSON.parse(e.target.result);
-          sets.push(importedSet); saveSets(); displaySets();
-          alert("Set importé avec succès !");
-        }catch(err){ alert("Erreur : fichier invalide !"); }
-      };
-      reader.readAsText(file);
-    }
-
-    function importSetFromUrl(){
-      const params = new URLSearchParams(window.location.search);
-      if(params.has('set')){
-        try{
-          const base64 = params.get('set');
-          const jsonStr = atob(base64);
-          const importedSet = JSON.parse(jsonStr);
-          sets.push(importedSet);
-          saveSets();
-          alert("Set importé depuis le lien !");
-        }catch(err){
-          console.error(err);
-          alert("Erreur lors de l'import du set depuis le lien !");
-        }
-      }
-    }
-
+    // ✅ Mélange aléatoire des cartes
     function startGame(i){
-      currentSet = sets[i]; currentCards = [...currentSet.cards]; currentIndex=0; errors=[];
+      currentSet = sets[i];
+      currentCards = [...currentSet.cards];
+      for (let j = currentCards.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [currentCards[j], currentCards[k]] = [currentCards[k], currentCards[j]];
+      }
+      currentIndex=0; errors=[];
       document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
       document.getElementById("game-screen").classList.remove("hidden");
       document.getElementById("game-title").textContent = currentSet.title;
@@ -346,19 +275,6 @@
         frontImg.style.display="none"; backImg.style.display="none";
       }
 
-      function adjustFontSize(face){
-        let fontSize = 28;
-        const minFontSize = 12;
-        face.style.fontSize = fontSize+"px";
-        while(face.scrollHeight > face.clientHeight && fontSize > minFontSize){
-          fontSize--;
-          face.style.fontSize = fontSize+"px";
-        }
-      }
-
-      adjustFontSize(frontFace);
-      adjustFontSize(backFace);
-
       document.querySelector(".card").classList.remove("flipped");
     }
 
@@ -377,7 +293,6 @@
       document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
       document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
 
-    importSetFromUrl();
     goHome();
   </script>
 </body>
