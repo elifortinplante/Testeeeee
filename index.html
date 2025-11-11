@@ -39,7 +39,7 @@
     .set-buttons { margin-left: auto; display: flex; gap: 5px; }
     .card-container { perspective: 1000px; margin: 20px 0; }
     .card {
-      width: 100%; height: 300px;
+      width: 100%; height: 350px; /* légèrement plus grand pour images plus grandes */
       position: relative; transform-style: preserve-3d;
       transition: transform 0.6s; cursor: pointer;
     }
@@ -56,10 +56,10 @@
     .card-front { background: #fff; }
     .card-back { background: #f0f0f0; transform: rotateY(180deg); }
     .card-face img {
-      width: 100%;       /* largeur forcée */
-      height: 150px;     /* hauteur identique aux images URL */
+      width: 100%;
+      max-height: 250px; /* plus grand */
       margin-bottom: 15px;
-      object-fit: contain;  /* image entière, pas de découpe, proportions gardées */
+      object-fit: contain; /* garde proportions, pas de coupure */
     }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
@@ -289,7 +289,7 @@
       }
     }
 
-    // Mélange aléatoire
+    // Tirage aléatoire
     function startGame(i){
       currentSet = sets[i];
       currentCards = [...currentSet.cards];
@@ -322,7 +322,7 @@
       }
 
       function adjustFontSize(face){
-        let fontSize = 28;
+        let fontSize = 36;  // plus grand initialement
         const minFontSize = 12;
         face.style.fontSize = fontSize+"px";
         while(face.scrollHeight > face.clientHeight && fontSize > minFontSize){
