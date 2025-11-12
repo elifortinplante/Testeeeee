@@ -5,158 +5,191 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flashcards App</title>
 <style>
-body {margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#a18cd1,#fbc2eb,#8fd3f4);min-height:100vh;display:flex;justify-content:center;align-items:center;}
-.container {width:90%;max-width:800px;background:white;border-radius:20px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);}
-h1,h2{text-align:center;color:#333;}
-.hidden{display:none;}
-.set{display:flex;align-items:center;background:#f3f3f3;border-radius:15px;padding:10px;margin:10px 0;cursor:pointer;transition:0.3s;}
-.set:hover{background:#e8e8e8;}
-.set img{width:60px;height:60px;border-radius:12px;object-fit:cover;margin-right:15px;}
-.set-buttons{margin-left:auto;display:flex;gap:5px;}
-.card-container{perspective:1000px;margin:20px 0;position:relative;}
-.card{width:100%;height:350px;position:relative;transform-style:preserve-3d;transition:transform 0.6s;cursor:pointer;}
-.card.flipped{transform:rotateY(180deg);}
-.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;font-weight:bold;text-align:center;color:#333;overflow:hidden;}
-.card-front{background:#fff;}
-.card-back{background:#f0f0f0;transform:rotateY(180deg);}
-.card-face img{width:100%;max-height:250px;margin-bottom:15px;object-fit:contain;}
-.answer-buttons{display:flex;justify-content:space-between;margin-top:20px;}
-.answer-buttons button{flex:1;margin:0 5px;padding:10px;font-size:18px;border:none;border-radius:12px;cursor:pointer;transition:0.3s;}
-.correct{background:#a0e7a0;}
-.incorrect{background:#f28b82;}
-.correct:hover{background:#77d677;}
-.incorrect:hover{background:#e06666;}
-#score-screen{text-align:center;}
-#score-screen button{margin:10px;padding:12px 20px;font-size:16px;border:none;border-radius:12px;cursor:pointer;background:#a18cd1;color:white;transition:0.3s;}
-#score-screen button:hover{background:#875fb3;}
-.card-editor{margin-bottom:10px;}
-.card-editor input{display:block;width:95%;margin-bottom:5px;}
-#test-preview{position:relative;width:100%;height:350px;margin-top:20px;border:1px solid #ccc;overflow:hidden;}
-.draggable{position:absolute;cursor:move;}
-.resizer{width:15px;height:15px;background:#888;position:absolute;right:0;bottom:0;cursor:se-resize;z-index:10;}
+  body {
+    margin:0; font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#a18cd1,#fbc2eb,#8fd3f4);
+    min-height:100vh; display:flex; justify-content:center; align-items:center;
+  }
+  .container { width:90%; max-width:800px; background:white; border-radius:20px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,0.2);}
+  h1,h2{text-align:center;color:#333;}
+  .hidden{display:none;}
+  .set { display:flex; align-items:center; background:#f3f3f3; border-radius:15px; padding:10px; margin:10px 0; cursor:pointer; transition:0.3s; }
+  .set:hover{background:#e8e8e8;}
+  .set img{width:60px;height:60px;border-radius:12px;object-fit:cover;margin-right:15px;}
+  .set-buttons { margin-left:auto; display:flex; gap:5px; }
+  .card-container{ perspective:1000px; margin:20px 0; }
+  .card { width:100%; height:350px; position:relative; transform-style:preserve-3d; transition:transform 0.6s; cursor:pointer; }
+  .card.flipped{transform:rotateY(180deg);}
+  .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; font-weight:bold; text-align:center; color:#333; overflow:hidden;}
+  .card-front{background:#fff;}
+  .card-back{background:#f0f0f0; transform:rotateY(180deg);}
+  .card-face img{width:100%; max-height:250px; margin-bottom:15px; object-fit:contain;}
+  .answer-buttons{display:flex; justify-content:space-between; margin-top:20px;}
+  .answer-buttons button{flex:1;margin:0 5px;padding:10px;font-size:18px;border:none;border-radius:12px;cursor:pointer; transition:0.3s;}
+  .correct{background:#a0e7a0;}
+  .incorrect{background:#f28b82;}
+  .correct:hover{background:#77d677;}
+  .incorrect:hover{background:#e06666;}
+  #score-screen{text-align:center;}
+  #score-screen button{margin:10px;padding:12px 20px;font-size:16px;border:none;border-radius:12px; cursor:pointer;background:#a18cd1;color:white; transition:0.3s;}
+  #score-screen button:hover{background:#875fb3;}
+  .card-editor{margin-bottom:10px;}
+  .card-editor input{display:block;width:95%;margin-bottom:5px;}
+  
+  /* Prévisualisation */
+  .draggable { touch-action:none; cursor:grab; position:absolute; }
+  .slider-container { position:relative; width:30px; height:200px; background:#eee; border-radius:15px; user-select:none; }
+  .slider-bille { position:absolute; bottom:0; left:0; width:100%; height:20px; border-radius:50%; cursor:pointer; }
+  .preview-container { display:flex; gap:20px; }
+  .card-container-preview { position:relative; flex:1; height:400px; border:1px solid #ccc; border-radius:20px; overflow:hidden; }
+  .controls { display:flex; flex-direction:column; justify-content:flex-start; gap:20px; }
 </style>
 </head>
 <body>
 <div class="container">
 
-<!-- Accueil -->
+<!-- Écran accueil -->
 <div id="home-screen">
-<h1>Mes Sets</h1>
-<button onclick="showSetEditor()">➕ Nouveau set</button>
-<button onclick="document.getElementById('import-file').click()">📥 Importer un set</button>
-<button onclick="exportAllSets()">💾 Exporter tous les sets</button>
-<input type="file" id="import-file" class="hidden" onchange="importSet(event)">
-<div id="sets-list"></div>
+  <h1>Mes Sets</h1>
+  <button onclick="showSetEditor()">➕ Nouveau set</button>
+  <button onclick="document.getElementById('import-file').click()">📥 Importer un set</button>
+  <button onclick="exportAllSets()">💾 Exporter tous les sets</button>
+  <input type="file" id="import-file" class="hidden" onchange="importSet(event)">
+  <div id="sets-list"></div>
 </div>
 
-<!-- Éditeur -->
+<!-- Écran édition -->
 <div id="editor-screen" class="hidden">
-<h2>Créer / Modifier un Set</h2>
-<input type="text" id="set-title" placeholder="Titre du set"><br><br>
-<input type="text" id="set-subject" placeholder="Matière"><br><br>
-<input type="text" id="set-image" placeholder="URL image pour l’accueil">
-<input type="file" accept="image/*" id="set-image-file" style="display:none">
-<button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
-<div id="cards-editor"></div>
-<button onclick="addCardEditor()">➕ Ajouter une carte</button><br><br>
-<button onclick="toggleTestMode()">🧪 Mode Test</button>
-<button onclick="saveSet()">💾 Sauvegarder</button>
-<button onclick="goHome()">🏠 Accueil</button>
-<div id="test-preview" class="hidden"></div>
+  <h2>Créer / Modifier un Set</h2>
+  <input type="text" id="set-title" placeholder="Titre du set"><br><br>
+  <input type="text" id="set-subject" placeholder="Matière"><br><br>
+  <input type="text" id="set-image" placeholder="URL image pour l’accueil">
+  <input type="file" accept="image/*" id="set-image-file" style="display:none">
+  <button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
+  <div id="cards-editor"></div>
+  <button onclick="addCardEditor()">➕ Ajouter une carte</button><br><br>
+  <button onclick="saveSet()">💾 Sauvegarder</button>
+  <button onclick="goHome()">🏠 Accueil</button>
+  <button onclick="showPreviewForCurrentSet()">👁️ Prévisualisation</button>
 </div>
 
-<!-- Jeu -->
+<!-- Prévisualisation interactive -->
+<div id="preview-screen" class="hidden">
+  <h2>Prévisualisation</h2>
+  <div class="preview-container">
+    <div class="card-container-preview">
+      <div id="preview-text" class="draggable" style="top:50px; left:50px; font-size:36px;">Texte</div>
+      <img id="preview-image" class="draggable" style="top:100px; left:50px; max-height:250px;" />
+    </div>
+    <div class="controls">
+      <div>
+        <label>Texte</label>
+        <div class="slider-container">
+          <div id="text-slider" class="slider-bille" style="background:#a18cd1;"></div>
+        </div>
+      </div>
+      <div>
+        <label>Image</label>
+        <div class="slider-container">
+          <div id="image-slider" class="slider-bille" style="background:#fbc2eb;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:10px; text-align:center;">
+    <button onclick="prevPreview()">⬅️ Précédent</button>
+    <button onclick="nextPreview()">➡️ Suivant</button>
+    <button onclick="savePreview()">💾 Enregistrer</button>
+    <button onclick="goEditor()">🏠 Retour à l'éditeur</button>
+  </div>
+</div>
+
+<!-- Écran jeu -->
 <div id="game-screen" class="hidden">
-<h2 id="game-title"></h2>
-<div class="card-container">
-<div class="card" onclick="flipCard()">
-<div class="card-face card-front">
-<img id="card-image-front" alt="">
-<div id="card-question"></div>
-</div>
-<div class="card-face card-back">
-<img id="card-image-back" alt="">
-<div id="card-answer"></div>
-</div>
-</div>
-</div>
-<div class="answer-buttons">
-<button class="incorrect" onclick="markAnswer(false)">Mauvais</button>
-<button class="correct" onclick="markAnswer(true)">Bon</button>
-</div>
+  <h2 id="game-title"></h2>
+  <div class="card-container">
+    <div class="card" onclick="flipCard()">
+      <div class="card-face card-front">
+        <img id="card-image-front" alt="">
+        <div id="card-question"></div>
+      </div>
+      <div class="card-face card-back">
+        <img id="card-image-back" alt="">
+        <div id="card-answer"></div>
+      </div>
+    </div>
+  </div>
+  <div class="answer-buttons">
+    <button class="incorrect" onclick="markAnswer(false)">Mauvais</button>
+    <button class="correct" onclick="markAnswer(true)">Bon</button>
+  </div>
 </div>
 
-<!-- Score -->
+<!-- Écran score -->
 <div id="score-screen" class="hidden">
-<h2>Résultat</h2>
-<p id="final-score"></p>
-<button onclick="restartAll()">🔄 Recommencer tout</button>
-<button onclick="restartErrors()">❌ Rejouer erreurs</button>
-<button onclick="goHome()">🏠 Accueil</button>
+  <h2>Résultat</h2>
+  <p id="final-score"></p>
+  <button onclick="restartAll()">🔄 Recommencer tout</button>
+  <button onclick="restartErrors()">❌ Rejouer erreurs</button>
+  <button onclick="goHome()">🏠 Accueil</button>
 </div>
+
 </div>
 
 <script>
-let sets=JSON.parse(localStorage.getItem("sets"))||[];
-let currentSet=null,currentCards=[],currentIndex=0,errors=[];
-let testMode=false,currentTestCard=0;
+/* ======= Variables ======= */
+let sets = JSON.parse(localStorage.getItem("sets")) || [];
+let currentSet=null, currentCards=[], currentIndex=0, errors=[];
 
-// Sauvegarde
-function saveSets(){localStorage.setItem("sets",JSON.stringify(sets));}
+/* ======= Sauvegarde et affichage ======= */
+function saveSets(){ localStorage.setItem("sets",JSON.stringify(sets)); }
+function goHome(){ document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden")); document.getElementById("home-screen").classList.remove("hidden"); displaySets(); }
 
-// Accueil
-function goHome(){document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("home-screen").classList.remove("hidden");displaySets();}
-
-// Éditeur
+/* ======= Éditeur ======= */
 function showSetEditor(setIndex=null){
-  document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));
+  document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden"));
   document.getElementById("editor-screen").classList.remove("hidden");
   document.getElementById("cards-editor").innerHTML="";
-  document.getElementById("test-preview").classList.add("hidden");
-  testMode=false;
-
-  document.getElementById("set-image-file").onchange=(e)=>{
-    const file=e.target.files[0];
-    if(!file)return;
+  
+  document.getElementById("set-image-file").onchange = (e)=>{
+    const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
-    reader.onload=(ev)=>{document.getElementById("set-image").value=ev.target.result;};
+    reader.onload=(ev)=>{ document.getElementById("set-image").value=ev.target.result; };
     reader.readAsDataURL(file);
   };
-
+  
   if(setIndex!==null){
     currentSet=sets[setIndex];
     document.getElementById("set-title").value=currentSet.title;
     document.getElementById("set-subject").value=currentSet.subject;
     document.getElementById("set-image").value=currentSet.image;
     currentSet.cards.forEach(c=>addCardEditor(c.question,c.answer,c.image));
-  }else{currentSet=null;}
+  } else currentSet=null;
 }
 
 function addCardEditor(q='',a='',img=''){
-  const div=document.createElement("div");
-  div.className="card-editor";
+  const div=document.createElement("div"); div.className="card-editor";
   div.innerHTML=`
-  <input type="text" placeholder="Question" value="${q}">
-  <input type="text" placeholder="Réponse" value="${a}">
-  <input type="text" placeholder="URL image ou vide" value="${img}">
-  <input type="file" accept="image/*" class="img-upload" style="display:none">
-  <button class="btn-photo">📸 Galerie</button>
-  <button class="btn-del-card">🗑️ Supprimer cette carte</button><hr>`;
+    <input type="text" placeholder="Question" value="${q}">
+    <input type="text" placeholder="Réponse" value="${a}">
+    <input type="text" placeholder="URL image ou vide" value="${img}">
+    <input type="file" accept="image/*" class="img-upload" style="display:none">
+    <button class="btn-photo">📸 Galerie</button>
+    <button class="btn-del-card">🗑️ Supprimer cette carte</button>
+    <hr>`;
   document.getElementById("cards-editor").appendChild(div);
 
-  const imgInput=div.querySelector(".img-upload");
-  const urlInput=div.children[2];
+  const imgInput=div.querySelector(".img-upload"); const urlInput=div.children[2];
   div.querySelector(".btn-photo").onclick=()=>imgInput.click();
   imgInput.onchange=(e)=>{
-    const file=e.target.files[0];if(!file)return;
+    const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
-    reader.onload=(ev)=>{urlInput.value=ev.target.result;};
+    reader.onload=(ev)=>{ urlInput.value=ev.target.result; };
     reader.readAsDataURL(file);
   };
   div.querySelector(".btn-del-card").onclick=()=>div.remove();
 }
 
-// Sauvegarde set
 function saveSet(){
   const title=document.getElementById("set-title").value;
   const subject=document.getElementById("set-subject").value;
@@ -166,117 +199,131 @@ function saveSet(){
     const q=div.children[0].value;
     const a=div.children[1].value;
     const img=div.children[2].value;
-    if(q&&a)cards.push({question:q,answer:a,image:img});
+    if(q && a) cards.push({question:q, answer:a, image:img});
   });
-  if(currentSet){currentSet.title=title;currentSet.subject=subject;currentSet.image=image;currentSet.cards=cards;}
-  else{sets.push({title,subject,image,cards});}
-  saveSets();currentSet=null;goHome();
+  if(currentSet){ currentSet.title=title; currentSet.subject=subject; currentSet.image=image; currentSet.cards=cards; }
+  else sets.push({title,subject,image,cards});
+  saveSets(); currentSet=null; goHome();
 }
 
-// Affichage sets
 function displaySets(){
-  const list=document.getElementById("sets-list");list.innerHTML="";
+  const list=document.getElementById("sets-list"); list.innerHTML="";
   sets.forEach((s,i)=>{
-    const div=document.createElement("div");div.className="set";
-    div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}"><div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`;
+    const div=document.createElement("div"); div.className="set";
+    div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}">
+                     <div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`;
     div.onclick=()=>startGame(i);
-    const btnDiv=document.createElement("div");btnDiv.className="set-buttons";
-    const editBtn=document.createElement("button");editBtn.textContent="✏️ Modifier";editBtn.onclick=e=>{e.stopPropagation();showSetEditor(i);};
-    const delBtn=document.createElement("button");delBtn.textContent="🗑️ Supprimer";delBtn.onclick=e=>{e.stopPropagation();sets.splice(i,1);saveSets();displaySets();};
-    const shareBtn=document.createElement("button");shareBtn.textContent="📤 Partager";shareBtn.onclick=async e=>{
+
+    const buttonsDiv=document.createElement("div"); buttonsDiv.className="set-buttons";
+    const editBtn=document.createElement("button"); editBtn.textContent="✏️ Modifier"; editBtn.onclick=e=>{ e.stopPropagation(); showSetEditor(i); };
+    const delBtn=document.createElement("button"); delBtn.textContent="🗑️ Supprimer"; delBtn.onclick=e=>{ e.stopPropagation(); deleteSet(i); };
+    const shareBtn=document.createElement("button"); shareBtn.textContent="📤 Partager"; shareBtn.onclick=async e=>{
       e.stopPropagation();
       const jsonStr=JSON.stringify(sets[i],null,2);
       const blob=new Blob([jsonStr],{type:"application/json"});
       const file=new File([blob],`${sets[i].title.replace(/[^a-z0-9]/gi,"_")||"set"}.json`,{type:"application/json"});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){
-        try{await navigator.share({files:[file],title:sets[i].title,text:"Voici mon set de flashcards !"});alert("✅ Set partagé ou enregistré !");return;}catch(err){console.log(err);}
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:sets[i].title, text:"Voici mon set de flashcards !"}); alert("✅ Set partagé ou enregistré !"); return; }catch(err){ console.log(err); }
       }
-      const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`${sets[i].title.replace(/[^a-z0-9]/gi,"_")||"set"}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert("✅ Fichier téléchargé !");
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download=`${sets[i].title.replace(/[^a-z0-9]/gi,"_")||"set"}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); alert("✅ Fichier téléchargé !"); 
     };
-    btnDiv.appendChild(editBtn);btnDiv.appendChild(delBtn);btnDiv.appendChild(shareBtn);
-    div.appendChild(btnDiv);list.appendChild(div);
+    buttonsDiv.appendChild(editBtn); buttonsDiv.appendChild(delBtn); buttonsDiv.appendChild(shareBtn);
+    div.appendChild(buttonsDiv);
+    list.appendChild(div);
   });
 }
 
-// Mode Test 3D avec drag + resize
-function toggleTestMode(){
-  const preview=document.getElementById("test-preview");
-  if(testMode){preview.classList.add("hidden");testMode=false;return;}
-  if(document.querySelectorAll("#cards-editor>.card-editor").length===0){alert("Ajouter au moins une carte pour tester !");return;}
-  testMode=true;preview.innerHTML="";preview.classList.remove("hidden");currentTestCard=0;showTestCard3D();
+function deleteSet(i){ if(confirm("Supprimer ce set ?")){ sets.splice(i,1); saveSets(); displaySets(); }}
+
+/* ======= Jeu ======= */
+function startGame(i){
+  currentSet=sets[i]; currentCards=[...currentSet.cards];
+  for(let j=currentCards.length-1;j>0;j--){ const k=Math.floor(Math.random()*(j+1)); [currentCards[j],currentCards[k]]=[currentCards[k],currentCards[j]]; }
+  currentIndex=0; errors=[];
+  document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden"));
+  document.getElementById("game-screen").classList.remove("hidden");
+  document.getElementById("game-title").textContent=currentSet.title;
+  showCard();
 }
 
-function makeDraggableResizable(el, container){
-  el.style.position="absolute"; el.style.cursor="move";
-  el.onmousedown=function(e){
-    e.preventDefault();
-    const rect=el.getBoundingClientRect();
-    const offsetX=e.clientX-rect.left, offsetY=e.clientY-rect.top;
-    function moveAt(pageX,pageY){el.style.left=pageX-offsetX-container.getBoundingClientRect().left+"px"; el.style.top=pageY-offsetY-container.getBoundingClientRect().top+"px";}
-    function onMouseMove(ev){moveAt(ev.pageX,ev.pageY);}
-    document.addEventListener("mousemove",onMouseMove);
-    document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
-  };
-  el.ondragstart=function(){return false;};
-
-  const resizer=document.createElement("div");
-  resizer.className="resizer";
-  el.appendChild(resizer);
-  resizer.onmousedown=function(e){
-    e.stopPropagation(); e.preventDefault();
-    const startWidth=el.offsetWidth, startHeight=el.offsetHeight, startX=e.clientX, startY=e.clientY;
-    function onMouseMove(ev){el.style.width=startWidth+(ev.clientX-startX)+"px"; el.style.height=startHeight+(ev.clientY-startY)+"px";}
-    document.addEventListener("mousemove",onMouseMove);
-    document.onmouseup=function(){document.removeEventListener("mousemove",onMouseMove);document.onmouseup=null;}
-  };
+function showCard(){
+  const card=currentCards[currentIndex];
+  const frontImg=document.getElementById("card-image-front");
+  const backImg=document.getElementById("card-image-back");
+  document.getElementById("card-question").textContent=card.question;
+  document.getElementById("card-answer").textContent=card.answer;
+  if(card.image){ frontImg.src=card.image; frontImg.style.display="block"; backImg.src=card.image; backImg.style.display="block"; }
+  else { frontImg.style.display="none"; backImg.style.display="none"; }
+  document.querySelector(".card").classList.remove("flipped");
 }
 
-function showTestCard3D(){
-  const preview=document.getElementById("test-preview");
-  preview.innerHTML="";
-  const editor=document.querySelectorAll("#cards-editor>.card-editor")[currentTestCard];
-  const q=editor.children[0].value;
-  const a=editor.children[1].value;
-  const imgSrc=editor.children[2].value;
+function flipCard(){ document.querySelector(".card").classList.toggle("flipped"); }
+function markAnswer(correct){ if(!correct) errors.push(currentCards[currentIndex]); currentIndex++; if(currentIndex<currentCards.length) showCard(); else endGame(); }
+function endGame(){ document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden")); document.getElementById("score-screen").classList.remove("hidden"); document.getElementById("final-score").textContent=`Score: ${currentCards.length-errors.length}/${currentCards.length}`; }
+function restartAll(){ currentCards=[...currentSet.cards]; currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden")); document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
+function restartErrors(){ if(errors.length===0){ alert("Aucune erreur !"); return; } currentCards=[...errors]; currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden")); document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
 
-  const cardDiv=document.createElement("div");cardDiv.className="card";cardDiv.style.width="100%";cardDiv.style.height="100%";
-  cardDiv.onclick=()=>cardDiv.classList.toggle("flipped");
+/* ======= Import ======= */
+function importSet(event){ const file=event.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(e){ try{ const importedSet=JSON.parse(e.target.result); sets.push(importedSet); saveSets(); displaySets(); alert("Set importé !"); }catch(err){ alert("Fichier invalide !"); } }; reader.readAsText(file); }
 
-  const front=document.createElement("div");front.className="card-face card-front";
-  const back=document.createElement("div");back.className="card-face card-back";
+/* ======= Prévisualisation interactive ======= */
+let previewIndex=0, previewSide='question';
 
-  const imgFront=document.createElement("img");imgFront.src=imgSrc; front.appendChild(imgFront);
-  const textQ=document.createElement("div");textQ.textContent=q;textQ.style.fontSize="28px"; front.appendChild(textQ);
+function showPreviewForCurrentSet(){ showPreview(currentSet ? sets.indexOf(currentSet) : 0); }
 
-  const imgBack=document.createElement("img");imgBack.src=imgSrc; back.appendChild(imgBack);
-  const textA=document.createElement("div");textA.textContent=a;textA.style.fontSize="24px"; back.appendChild(textA);
-
-  cardDiv.appendChild(front);cardDiv.appendChild(back); preview.appendChild(cardDiv);
-
-  [imgFront,textQ,imgBack,textA].forEach(el=>makeDraggableResizable(el,preview));
-
-  if(document.querySelectorAll("#cards-editor>.card-editor").length>1){
-    const nextBtn=document.createElement("button");nextBtn.textContent="➡️";nextBtn.style.position="absolute";nextBtn.style.bottom="5px";nextBtn.style.right="5px";
-    nextBtn.onclick=()=>{currentTestCard=(currentTestCard+1)%document.querySelectorAll("#cards-editor>.card-editor").length;showTestCard3D();}
-    preview.appendChild(nextBtn);
-  }
+function showPreview(setIndex){
+  document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden"));
+  document.getElementById("preview-screen").classList.remove("hidden");
+  previewIndex=0; previewSide='question';
+  currentSet=sets[setIndex];
+  showPreviewCard();
 }
 
-// Jeu et score (flip, markAnswer, etc.) restent inchangés
-function startGame(i){currentSet=sets[i];currentCards=[...currentSet.cards];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");document.getElementById("game-title").textContent=currentSet.title;showCard();}
-function showCard(){const card=currentCards[currentIndex];const frontImg=document.getElementById("card-image-front");const backImg=document.getElementById("card-image-back");const frontFace=document.querySelector(".card-front");const backFace=document.querySelector(".card-back");document.getElementById("card-question").textContent=card.question;document.getElementById("card-answer").textContent=card.answer;if(card.image){frontImg.src=card.image;frontImg.style.display="block";backImg.src=card.image;backImg.style.display="block";}else{frontImg.style.display="none";backImg.style.display="none";}
-function adjustFontSize(face){let fontSize=28;const minFontSize=12;face.style.fontSize=fontSize+"px";while(face.scrollHeight>face.clientHeight&&fontSize>minFontSize){fontSize--;face.style.fontSize=fontSize+"px";}}
-adjustFontSize(frontFace);adjustFontSize(backFace);document.querySelector(".card").classList.remove("flipped");}
-function flipCard(){document.querySelector(".card").classList.toggle("flipped");}
-function markAnswer(correct){if(!correct)errors.push(currentCards[currentIndex]);currentIndex++;if(currentIndex<currentCards.length)showCard();else endGame();}
-function endGame(){document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("score-screen").classList.remove("hidden");document.getElementById("final-score").textContent=`Score: ${currentCards.length-errors.length}/${currentCards.length}`;}
-function restartAll(){currentCards=[...currentSet.cards];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");showCard();}
-function restartErrors(){if(errors.length===0){alert("Aucune erreur à rejouer !");return;}currentCards=[...errors];currentIndex=0;errors=[];document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));document.getElementById("game-screen").classList.remove("hidden");showCard();}
+function showPreviewCard(){
+  const card=currentSet.cards[previewIndex];
+  const img=document.getElementById("preview-image");
+  const text=document.getElementById("preview-text");
+  text.textContent = previewSide==='question'? card.question : card.answer;
+  text.style.fontSize=(card.textSize||36)+'px'; text.style.top=(card.textTop||50)+'px'; text.style.left=(card.textLeft||50)+'px';
+  if(card.image){ img.src=card.image; img.style.display='block'; img.style.height=(card.imageHeight||250)+'px'; img.style.top=(card.imageTop||100)+'px'; img.style.left=(card.imageLeft||50)+'px'; } else img.style.display='none';
+  document.getElementById("text-slider").style.bottom=(card.textSize||36)+'px';
+  document.getElementById("image-slider").style.bottom=(card.imageHeight||250)+'px';
+}
 
-// Import / export
-function importSet(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){try{const importedSet=JSON.parse(e.target.result);sets.push(importedSet);saveSets();displaySets();alert("Set importé !");}catch(err){alert("Fichier invalide !");}};reader.readAsText(file);}
-function exportAllSets(){if(sets.length===0){alert("Aucun set !");return;}if(!confirm("Exporter tous les sets ?"))return;const jsonStr=JSON.stringify(sets,null,2);const blob=new Blob([jsonStr],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="mes_sets_flashcards.json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert("✅ Fichier téléchargé !");}
+function nextPreview(){ if(previewSide==='question') previewSide='answer'; else { previewSide='question'; previewIndex=Math.min(previewIndex+1,currentSet.cards.length-1); } showPreviewCard(); }
+function prevPreview(){ if(previewSide==='answer') previewSide='question'; else { previewIndex=Math.max(previewIndex-1,0); previewSide='answer'; } showPreviewCard(); }
 
+function makeDraggable(el,propTop,propLeft){
+  let isDragging=false,startX,startY,startTop,startLeft;
+  const move=(dx,dy)=>{ el.style.top=startTop+dy+'px'; el.style.left=startLeft+dx+'px'; const card=currentSet.cards[previewIndex]; card[propTop]=startTop+dy; card[propLeft]=startLeft+dx; };
+  el.addEventListener('mousedown',e=>{isDragging=true;startX=e.clientX;startY=e.clientY;startTop=parseInt(el.style.top);startLeft=parseInt(el.style.left);el.style.cursor='grabbing';});
+  document.addEventListener('mousemove',e=>{ if(!isDragging) return; move(e.clientX-startX,e.clientY-startY);});
+  document.addEventListener('mouseup',e=>{ isDragging=false; el.style.cursor='grab'; });
+  el.addEventListener('touchstart',e=>{isDragging=true;startX=e.touches[0].clientX;startY=e.touches[0].clientY;startTop=parseInt(el.style.top);startLeft=parseInt(el.style.left);});
+  el.addEventListener('touchmove',e=>{ if(!isDragging) return; e.preventDefault(); move(e.touches[0].clientX-startX,e.touches[0].clientY-startY);});
+  el.addEventListener('touchend',e=>{isDragging=false;});
+}
+
+function initSlider(sliderId,prop,el){
+  const slider=document.getElementById(sliderId); let isDragging=false,startY,startBottom,card;
+  slider.addEventListener('mousedown',e=>{isDragging=true; startY=e.clientY; startBottom=parseInt(slider.style.bottom); card=currentSet.cards[previewIndex];});
+  document.addEventListener('mousemove',e=>{ if(!isDragging) return; let dy=startY-e.clientY; let newVal=Math.min(500,Math.max(12,startBottom+dy)); slider.style.bottom=newVal+'px'; card[prop]=newVal; if(prop==='textSize') el.style.fontSize=newVal+'px'; else el.style.height=newVal+'px'; });
+  document.addEventListener('mouseup',e=>{isDragging=false;});
+  slider.addEventListener('touchstart',e=>{isDragging=true; startY=e.touches[0].clientY; startBottom=parseInt(slider.style.bottom); card=currentSet.cards[previewIndex];});
+  slider.addEventListener('touchmove',e=>{ if(!isDragging) return; e.preventDefault(); let dy=startY-e.touches[0].clientY; let newVal=Math.min(500,Math.max(12,startBottom+dy)); slider.style.bottom=newVal+'px'; card[prop]=newVal; if(prop==='textSize') el.style.fontSize=newVal+'px'; else el.style.height=newVal+'px'; });
+  slider.addEventListener('touchend',e=>{isDragging=false;});
+}
+
+makeDraggable(document.getElementById("preview-text"),'textTop','textLeft');
+makeDraggable(document.getElementById("preview-image"),'imageTop','imageLeft');
+initSlider("text-slider","textSize",document.getElementById("preview-text"));
+initSlider("image-slider","imageHeight",document.getElementById("preview-image"));
+
+function savePreview(){ saveSets(); alert("Modifications enregistrées !"); }
+function goEditor(){ document.getElementById("preview-screen").classList.add("hidden"); document.getElementById("editor-screen").classList.remove("hidden"); }
+
+/* ======= Initialisation ======= */
 goHome();
 </script>
 </body>
