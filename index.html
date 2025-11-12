@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flashcards App Final</title>
+<title>Flashcards App Final V2</title>
 <style>
 body { margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#a18cd1,#fbc2eb,#8fd3f4); min-height:100vh; display:flex; justify-content:center; align-items:center; }
 .container { width:90%; max-width:800px; background:white; border-radius:20px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,0.2);}
@@ -34,11 +34,13 @@ h1,h2{text-align:center;color:#333;}
 
 /* Prévisualisation */
 .draggable { touch-action:none; cursor:grab; position:absolute; }
-.slider-container { position:relative; width:30px; height:200px; background:#eee; border-radius:15px; user-select:none; }
-.slider-bille { position:absolute; bottom:0; left:0; width:100%; height:20px; border-radius:50%; cursor:pointer; }
+.slider-container { position:relative; width:30px; height:200px; background:#eee; border-radius:15px; user-select:none; margin:0 5px; }
+.slider-bille { position:absolute; bottom:0; left:0; width:100%; height:20px; border-radius:50%; background:#888; cursor:pointer; }
 .preview-container { display:flex; gap:20px; }
 .card-container-preview { position:relative; flex:1; height:400px; border:1px solid #ccc; border-radius:20px; overflow:hidden; }
 .controls { display:flex; flex-direction:column; justify-content:flex-start; gap:15px; }
+.controls-row { display:flex; gap:10px; justify-content:center; }
+.controls div{display:flex; flex-direction:column; align-items:center;}
 .controls label{display:block;text-align:center;margin-bottom:5px;}
 </style>
 </head>
@@ -79,9 +81,11 @@ h1,h2{text-align:center;color:#333;}
 <img id="preview-image" class="draggable"/>
 </div>
 <div class="controls">
+<div class="controls-row">
 <div><label>Texte Taille</label><div class="slider-container"><div id="text-slider" class="slider-bille"></div></div></div>
-<div><label>Texte Hauteur</label><div class="slider-container"><div id="text-height-slider" class="slider-bille"></div></div></div>
+<div><label>Texte Largeur</label><div class="slider-container"><div id="text-width-slider" class="slider-bille"></div></div></div>
 <div><label>Image Taille</label><div class="slider-container"><div id="image-slider" class="slider-bille"></div></div></div>
+</div>
 </div>
 </div>
 <div style="margin-top:10px; text-align:center;">
@@ -125,22 +129,22 @@ h1,h2{text-align:center;color:#333;}
 </div>
 
 <script>
-/* ===== Variables ===== */
+// ===== Variables =====
 let sets = JSON.parse(localStorage.getItem("sets")) || [];
 let currentSet=null, currentCards=[], currentIndex=0, errors=[];
 let previewIndex=0, previewSide='question';
 
-/* ===== Sauvegarde ===== */
+// ===== Sauvegarde =====
 function saveSets(){ localStorage.setItem("sets",JSON.stringify(sets)); }
 function goHome(){ document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden")); document.getElementById("home-screen").classList.remove("hidden"); displaySets(); }
 
-/* ===== Éditeur ===== */
+// ===== Éditeur =====
 function showSetEditor(setIndex=null){
 document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden"));
 document.getElementById("editor-screen").classList.remove("hidden");
 document.getElementById("cards-editor").innerHTML="";
 document.getElementById("set-image-file").onchange=(e)=>{const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>{document.getElementById("set-image").value=ev.target.result}; r.readAsDataURL(f)};
-if(setIndex!==null){ currentSet=sets[setIndex]; document.getElementById("set-title").value=currentSet.title; document.getElementById("set-subject").value=currentSet.subject; document.getElementById("set-image").value=currentSet.image; currentSet.cards.forEach(c=>addCardEditor(c.question,c.answer,c.image));} else currentSet=null;
+if(setIndex!==null){ currentSet=sets[setIndex]; document.getElementById("set-title").value=currentSet.title; document.getElementById("set-subject").value=currentSet.subject; document.getElementById("set-image").value=currentSet.image; currentSet.cards.forEach(c=>addCardEditor(c.question.text,c.answer.text,c.image.src));} else currentSet=null;
 }
 
 function addCardEditor(q='',a='',img=''){
@@ -160,34 +164,13 @@ const image=document.getElementById("set-image").value;
 const cards=[];
 document.querySelectorAll("#cards-editor>.card-editor").forEach(div=>{
   const q=div.children[0].value; const a=div.children[1].value; const img=div.children[2].value;
-  if(q && a) cards.push({question:{text:q,top:50,left:50,fontSize:36,height:36},answer:{text:a,top:50,left:50,fontSize:36,height:36},image:{src:img,top:100,left:50,height:250}});
+  if(q && a) cards.push({question:{text:q,top:50,left:50,fontSize:36,width:200},answer:{text:a,top:50,left:50,fontSize:36,width:200},image:{src:img,top:100,left:50,height:250}});
 });
 if(currentSet){ currentSet.title=title; currentSet.subject=subject; currentSet.image=image; currentSet.cards=cards; } else sets.push({title,subject,image,cards});
 saveSets(); currentSet=null; goHome();
 }
 
-function displaySets(){
-const list=document.getElementById("sets-list"); list.innerHTML="";
-sets.forEach((s,i)=>{
-  const div=document.createElement("div"); div.className="set";
-  div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}"><div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`;
-  div.onclick=()=>startGame(i);
-  const buttonsDiv=document.createElement("div"); buttonsDiv.className="set-buttons";
-  const editBtn=document.createElement("button"); editBtn.textContent="✏️ Modifier"; editBtn.onclick=e=>{ e.stopPropagation(); showSetEditor(i);};
-  const delBtn=document.createElement("button"); delBtn.textContent="🗑️ Supprimer"; delBtn.onclick=e=>{ e.stopPropagation(); deleteSet(i);};
-  const shareBtn=document.createElement("button"); shareBtn.textContent="📤 Partager"; shareBtn.onclick=e=>{
-    e.stopPropagation();
-    const blob=new Blob([JSON.stringify(sets[i],null,2)],{type:"application/json"});
-    const file=new File([blob],`${sets[i].title.replace(/[^a-z0-9]/gi,"_")||"set"}.json`,{type:"application/json"});
-    const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); alert("✅ Fichier téléchargé !"); };
-  buttonsDiv.appendChild(editBtn); buttonsDiv.appendChild(delBtn); buttonsDiv.appendChild(shareBtn); div.appendChild(buttonsDiv);
-  list.appendChild(div);
-});
-}
-
-function deleteSet(i){ if(confirm("Supprimer ce set ?")){ sets.splice(i,1); saveSets(); displaySets(); } }
-
-/* ===== Jeu ===== */
+// ===== Jeu =====
 function startGame(i){
 currentSet=sets[i]; currentCards=[...currentSet.cards]; for(let j=currentCards.length-1;j>0;j--){ const k=Math.floor(Math.random()*(j+1)); [currentCards[j],currentCards[k]]=[currentCards[k],currentCards[j]];}
 currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden")); document.getElementById("game-screen").classList.remove("hidden"); document.getElementById("game-title").textContent=currentSet.title; showCard();
@@ -197,8 +180,8 @@ function showCard(){
 const card=currentCards[currentIndex]; const frontImg=document.getElementById("card-image-front"); const backImg=document.getElementById("card-image-back");
 const frontDiv=document.getElementById("card-question"); const backDiv=document.getElementById("card-answer");
 
-frontDiv.textContent=card.question.text; frontDiv.style.top=card.question.top+'px'; frontDiv.style.left=card.question.left+'px'; frontDiv.style.fontSize=card.question.fontSize+'px'; frontDiv.style.height=card.question.height+'px';
-backDiv.textContent=card.answer.text; backDiv.style.top=card.answer.top+'px'; backDiv.style.left=card.answer.left+'px'; backDiv.style.fontSize=card.answer.fontSize+'px'; backDiv.style.height=card.answer.height+'px';
+frontDiv.textContent=card.question.text; frontDiv.style.top=card.question.top+'px'; frontDiv.style.left=card.question.left+'px'; frontDiv.style.fontSize=card.question.fontSize+'px'; frontDiv.style.width=card.question.width+'px';
+backDiv.textContent=card.answer.text; backDiv.style.top=card.answer.top+'px'; backDiv.style.left=card.answer.left+'px'; backDiv.style.fontSize=card.answer.fontSize+'px'; backDiv.style.width=card.answer.width+'px';
 
 if(card.image.src){ frontImg.src=card.image.src; frontImg.style.display='block'; frontImg.style.top=card.image.top+'px'; frontImg.style.left=card.image.left+'px'; frontImg.style.height=card.image.height+'px';
 backImg.src=card.image.src; backImg.style.display='block'; backImg.style.top=card.image.top+'px'; backImg.style.left=card.image.left+'px'; backImg.style.height=card.image.height+'px'; } else { frontImg.style.display='none'; backImg.style.display='none'; }
@@ -208,10 +191,10 @@ document.querySelector(".card").classList.remove("flipped");
 function flipCard(){ document.querySelector(".card").classList.toggle("flipped"); }
 function markAnswer(correct){ if(!correct) errors.push(currentCards[currentIndex]); currentIndex++; if(currentIndex<currentCards.length) showCard(); else endGame(); }
 function endGame(){ document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden")); document.getElementById("score-screen").classList.remove("hidden"); document.getElementById("final-score").textContent=`Score: ${currentCards.length-errors.length}/${currentCards.length}`; }
-function restartAll(){ currentCards=[...currentSet.cards]; currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(div=>div.classList.add("hidden")); document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
+function restartAll(){ currentCards=[...currentSet.cards]; currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(div=>div.classList.remove("hidden")); document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
 function restartErrors(){ if(errors.length===0){ alert("Aucune erreur !"); return; } currentCards=[...errors]; currentIndex=0; errors=[]; document.querySelectorAll(".container>div").forEach(div=>div.classList.remove("hidden")); document.getElementById("game-screen").classList.remove("hidden"); showCard(); }
 
-/* ===== Prévisualisation complète ===== */
+// ===== Prévisualisation =====
 function showPreviewForCurrentSet(){ showPreview(currentSet ? sets.indexOf(currentSet) : 0); }
 function showPreview(setIndex){ document.querySelectorAll(".container>div").forEach(d=>d.classList.add("hidden")); document.getElementById("preview-screen").classList.remove("hidden"); previewIndex=0; previewSide='question'; currentSet=sets[setIndex]; showPreviewCard(); }
 function showPreviewCard(){ 
@@ -219,10 +202,10 @@ const card=currentSet.cards[previewIndex];
 const elText=document.getElementById("preview-text"); 
 const elImg=document.getElementById("preview-image"); 
 let side=previewSide==='question'?card.question:card.answer; 
-elText.textContent=side.text; elText.style.top=side.top+'px'; elText.style.left=side.left+'px'; elText.style.fontSize=side.fontSize+'px'; elText.style.height=side.height+'px'; 
+elText.textContent=side.text; elText.style.top=side.top+'px'; elText.style.left=side.left+'px'; elText.style.fontSize=side.fontSize+'px'; elText.style.width=side.width+'px';
 elImg.src=card.image.src; elImg.style.top=card.image.top+'px'; elImg.style.left=card.image.left+'px'; elImg.style.height=card.image.height+'px'; 
 document.getElementById("text-slider").style.bottom=side.fontSize+'px'; 
-document.getElementById("text-height-slider").style.bottom=side.height+'px';
+document.getElementById("text-width-slider").style.bottom=side.width+'px';
 document.getElementById("image-slider").style.bottom=card.image.height+'px';
 }
 function nextPreview(){ if(previewSide==='question') previewSide='answer'; else { previewSide='question'; previewIndex=Math.min(previewIndex+1,currentSet.cards.length-1);} showPreviewCard();}
@@ -230,7 +213,7 @@ function prevPreview(){ if(previewSide==='answer') previewSide='question'; else 
 function savePreview(){ saveSets(); alert("Modifications enregistrées !"); }
 function goEditor(){ document.getElementById("preview-screen").classList.add("hidden"); document.getElementById("editor-screen").classList.remove("hidden"); }
 
-/* ===== Drag & Sliders ===== */
+// ===== Drag & Sliders =====
 function makeDraggable(el,propTop,propLeft){ let isDragging=false,startX,startY,startTop,startLeft; const move=(dx,dy)=>{ el.style.top=startTop+dy+'px'; el.style.left=startLeft+dx+'px'; let side=previewSide==='question'?currentSet.cards[previewIndex].question:currentSet.cards[previewIndex].answer; side[propTop]=startTop+dy; side[propLeft]=startLeft+dx; };
 el.addEventListener('mousedown',e=>{ isDragging=true; startX=e.clientX; startY=e.clientY; startTop=parseInt(el.style.top); startLeft=parseInt(el.style.left); el.style.cursor='grabbing';});
 document.addEventListener('mousemove',e=>{ if(!isDragging) return; move(e.clientX-startX,e.clientY-startY); });
@@ -240,23 +223,31 @@ el.addEventListener('touchmove',e=>{ if(!isDragging)return; e.preventDefault(); 
 el.addEventListener('touchend',e=>{isDragging=false;});
 }
 
-function initSlider(sliderId,prop,el,isTextHeight=false){
+function initSlider(sliderId,prop,el,isWidth=false){
 const slider=document.getElementById(sliderId); let isDragging=false,startY,startVal,card,side;
-slider.addEventListener('mousedown',e=>{isDragging=true; startY=e.clientY; card=currentSet.cards[previewIndex]; side=previewSide==='question'?card.question:card.answer; startVal=isTextHeight?side.height:side.fontSize;});
-document.addEventListener('mousemove',e=>{ if(!isDragging) return; let dy=startY-e.clientY; let newVal=Math.min(500,Math.max(12,startVal+dy)); if(isTextHeight) side.height=newVal; else side.fontSize=newVal; el.style[isTextHeight?'height':'fontSize']=newVal+'px'; slider.style.bottom=newVal+'px';});
+slider.addEventListener('mousedown',e=>{isDragging=true; startY=e.clientY; card=currentSet.cards[previewIndex]; side=previewSide==='question'?card.question:card.answer; startVal=isWidth?side.width:side.fontSize;});
+document.addEventListener('mousemove',e=>{ if(!isDragging) return; let dy=startY-e.clientY; let newVal=Math.min(500,Math.max(12,startVal+dy)); if(isWidth) side.width=newVal; else side.fontSize=newVal; el.style[isWidth?'width':'fontSize']=newVal+'px'; slider.style.bottom=newVal+'px'; });
 document.addEventListener('mouseup',e=>{isDragging=false;});
-slider.addEventListener('touchstart',e=>{isDragging=true; startY=e.touches[0].clientY; card=currentSet.cards[previewIndex]; side=previewSide==='question'?card.question:card.answer; startVal=isTextHeight?side.height:side.fontSize;});
-slider.addEventListener('touchmove',e=>{if(!isDragging) return; e.preventDefault(); let dy=startY-e.touches[0].clientY; let newVal=Math.min(500,Math.max(12,startVal+dy)); if(isTextHeight) side.height=newVal; else side.fontSize=newVal; el.style[isTextHeight?'height':'fontSize']=newVal+'px'; slider.style.bottom=newVal+'px';});
+slider.addEventListener('touchstart',e=>{isDragging=true; startY=e.touches[0].clientY; card=currentSet.cards[previewIndex]; side=previewSide==='question'?card.question:card.answer; startVal=isWidth?side.width:side.fontSize;});
+slider.addEventListener('touchmove',e=>{if(!isDragging) return; e.preventDefault(); let dy=startY-e.touches[0].clientY; let newVal=Math.min(500,Math.max(12,startVal+dy)); if(isWidth) side.width=newVal; else side.fontSize=newVal; el.style[isWidth?'width':'fontSize']=newVal+'px'; slider.style.bottom=newVal+'px';});
 slider.addEventListener('touchend',e=>{isDragging=false;});
 }
 
 makeDraggable(document.getElementById("preview-text"),'top','left');
 makeDraggable(document.getElementById("preview-image"),'top','left');
 initSlider("text-slider","fontSize",document.getElementById("preview-text"));
-initSlider("text-height-slider","height",document.getElementById("preview-text"),true);
+initSlider("text-width-slider","width",document.getElementById("preview-text"),true);
 initSlider("image-slider","height",document.getElementById("preview-image"));
 
-/* ===== Import ===== */
+// ===== Display sets =====
+function displaySets(){ const list=document.getElementById("sets-list"); list.innerHTML=""; sets.forEach((s,i)=>{ const div=document.createElement("div"); div.className="set"; div.innerHTML=`<img src="${s.image||'https://via.placeholder.com/60'}"><div><strong>${s.title}</strong><br><small>${s.subject}</small></div>`; div.onclick=()=>startGame(i); const btnDiv=document.createElement("div"); btnDiv.className="set-buttons";
+let editBtn=document.createElement("button"); editBtn.textContent="✏️ Modifier"; editBtn.onclick=e=>{ e.stopPropagation(); showSetEditor(i); };
+let delBtn=document.createElement("button"); delBtn.textContent="🗑️ Supprimer"; delBtn.onclick=e=>{ e.stopPropagation(); if(confirm("Supprimer ?")){ sets.splice(i,1); saveSets(); displaySets(); }};
+let shareBtn=document.createElement("button"); shareBtn.textContent="📤 Partager"; shareBtn.onclick=async e=>{ e.stopPropagation(); const jsonStr=JSON.stringify(sets[i],null,2); const blob=new Blob([jsonStr],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`${sets[i].title.replace(/[^a-z0-9]/gi,"_")||"set"}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); alert("Fichier téléchargé !"); };
+btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); btnDiv.appendChild(shareBtn); div.appendChild(btnDiv); list.appendChild(div); });
+}
+
+// ===== Import =====
 function importSet(event){ const file=event.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(e){ try{ const importedSet=JSON.parse(e.target.result); sets.push(importedSet); saveSets(); displaySets(); alert("Set importé !"); }catch(err){ alert("Fichier invalide !");} }; reader.readAsText(file); }
 
 goHome();
