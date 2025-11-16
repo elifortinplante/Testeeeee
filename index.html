@@ -21,6 +21,7 @@
       border-radius: 20px;
       padding: 20px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      position: relative;
     }
     h1, h2 { text-align: center; color: #333; }
     .hidden { display: none; }
@@ -37,7 +38,7 @@
     .set:hover { background: #e8e8e8; }
     .set img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; margin-right: 15px; }
     .set-buttons { margin-left: auto; display: flex; gap: 5px; }
-    .card-container { perspective: 1000px; margin: 20px 0; }
+    .card-container { perspective: 1000px; margin: 20px 0; position: relative; }
     .card {
       width: 100%; height: 350px;
       position: relative; transform-style: preserve-3d;
@@ -57,9 +58,10 @@
     .card-back { background: #f0f0f0; transform: rotateY(180deg); }
     .card-face img {
       width: 100%;
-      height: 100%; /* prend toute la hauteur disponible */
+      height: 100%;
       margin-bottom: 15px;
-      object-fit: contain; /* garde proportions, pas de coupure */
+      object-fit: contain;
+      position: absolute; top:0; left:0;
     }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
@@ -80,6 +82,34 @@
     #score-screen button:hover { background: #875fb3; }
     .card-editor { margin-bottom: 10px; }
     .card-editor input { display: block; width: 95%; margin-bottom: 5px; }
+
+    /* Mode édition */
+    .edit-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 8px;
+      background: #f0a500;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .handle {
+      width: 10px;
+      height: 10px;
+      background: #ff0000;
+      position: absolute;
+      cursor: nwse-resize;
+      z-index: 50;
+    }
+    .image-editable, .text-editable {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
   </style>
 </head>
 <body>
@@ -100,8 +130,6 @@
       <h2>Créer / Modifier un Set</h2>
       <input type="text" id="set-title" placeholder="Titre du set"><br><br>
       <input type="text" id="set-subject" placeholder="Matière"><br><br>
-
-      <!-- Image couverture -->
       <input type="text" id="set-image" placeholder="URL image pour l’accueil">
       <input type="file" accept="image/*" id="set-image-file" style="display:none">
       <button onclick="document.getElementById('set-image-file').click()">📸 Galerie couverture</button><br><br>
@@ -116,14 +144,15 @@
     <div id="game-screen" class="hidden">
       <h2 id="game-title"></h2>
       <div class="card-container">
-        <div class="card" onclick="flipCard()">
+        <div class="card">
+          <button id="edit-card-btn" class="edit-btn">Modifier</button>
           <div class="card-face card-front">
             <img id="card-image-front" alt="">
-            <div id="card-question"></div>
+            <div id="card-question" style="position: absolute;"></div>
           </div>
           <div class="card-face card-back">
             <img id="card-image-back" alt="">
-            <div id="card-answer"></div>
+            <div id="card-answer" style="position: absolute;"></div>
           </div>
         </div>
       </div>
@@ -144,7 +173,7 @@
   </div>
 
   <script>
-    // --- Ton JS reste exactement le même ---
+    // ----------------- Code existant -----------------
     let sets = JSON.parse(localStorage.getItem("sets")) || [];
     let currentSet = null;
     let currentCards = [];
@@ -289,6 +318,106 @@
       }
     }
 
+    // ----------------- Mode Jeu -----------------
+    let editMode = false;
+    const editBtn = document.getElementById("edit-card-btn");
+    const cardFront = document.querySelector(".card-front");
+    const cardBack = document.querySelector(".card-back");
+    const frontImg = document.getElementById("card-image-front");
+    const backImg = document.getElementById("card-image-back");
+    const frontText = document.getElementById("card-question");
+    const backText = document.getElementById("card-answer");
+
+    editBtn.onclick = () => {
+      editMode = !editMode;
+      if(editMode){
+        editBtn.textContent = "Enregistrer";
+        enableEdit(frontImg, frontText, backImg, backText);
+      } else {
+        editBtn.textContent = "Modifier";
+        saveEdits();
+        disableEdit(frontImg, frontText, backImg, backText);
+      }
+    };
+
+    function enableEdit(imgF, textF, imgB, textB){
+      textF.contentEditable = true;
+      textB.contentEditable = true;
+      makeDraggableResizable(imgF);
+      makeDraggableResizable(imgB);
+      makeDraggableResizable(textF);
+      makeDraggableResizable(textB);
+    }
+
+    function disableEdit(imgF, textF, imgB, textB){
+      textF.contentEditable = false;
+      textB.contentEditable = false;
+      removeHandles(imgF);
+      removeHandles(imgB);
+      removeHandles(textF);
+      removeHandles(textB);
+    }
+
+    function saveEdits(){
+      const card = currentCards[currentIndex];
+      card.question = frontText.textContent;
+      card.answer = backText.textContent;
+      card.image = frontImg.src;
+      saveSets();
+    }
+
+    function makeDraggableResizable(el){
+      el.classList.add("image-editable");
+      const parent = el.parentElement;
+      const handle = document.createElement("div");
+      handle.className = "handle";
+      handle.style.right = "0px";
+      handle.style.bottom = "0px";
+      parent.appendChild(handle);
+
+      let isDragging = false;
+      let startX, startY, origX, origY;
+
+      el.onmousedown = e => {
+        if(e.target === handle) return;
+        isDragging = true;
+        startX = e.clientX; startY = e.clientY;
+        const rect = el.getBoundingClientRect();
+        origX = rect.left - parent.getBoundingClientRect().left;
+        origY = rect.top - parent.getBoundingClientRect().top;
+        e.preventDefault();
+      };
+      document.onmousemove = e => {
+        if(isDragging){
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          el.style.left = (origX + dx) + "px";
+          el.style.top = (origY + dy) + "px";
+        }
+        if(handle.isResizing){
+          const dx = e.clientX - handle.startX;
+          const dy = e.clientY - handle.startY;
+          el.style.width = (handle.startWidth + dx) + "px";
+          el.style.height = (handle.startHeight + dy) + "px";
+        }
+      };
+      document.onmouseup = () => { isDragging = false; handle.isResizing = false; };
+
+      handle.onmousedown = e => {
+        handle.isResizing = true;
+        handle.startX = e.clientX;
+        handle.startY = e.clientY;
+        handle.startWidth = el.offsetWidth;
+        handle.startHeight = el.offsetHeight;
+        e.stopPropagation();
+      };
+    }
+
+    function removeHandles(el){
+      const parent = el.parentElement;
+      parent.querySelectorAll(".handle").forEach(h => h.remove());
+    }
+
     function startGame(i){
       currentSet = sets[i];
       currentCards = [...currentSet.cards];
@@ -305,11 +434,6 @@
 
     function showCard() {
       const card = currentCards[currentIndex];
-      const frontImg = document.getElementById("card-image-front");
-      const backImg = document.getElementById("card-image-back");
-      const frontFace = document.querySelector(".card-front");
-      const backFace = document.querySelector(".card-back");
-
       document.getElementById("card-question").textContent = card.question;
       document.getElementById("card-answer").textContent = card.answer;
 
@@ -329,8 +453,8 @@
           face.style.fontSize = fontSize+"px";
         }
       }
-      adjustFontSize(frontFace);
-      adjustFontSize(backFace);
+      adjustFontSize(cardFront);
+      adjustFontSize(cardBack);
 
       document.querySelector(".card").classList.remove("flipped");
     }
