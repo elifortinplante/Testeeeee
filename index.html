@@ -53,13 +53,22 @@
       font-weight: bold; text-align: center; color: #333;
       overflow: hidden;
     }
-    .card-front { background: #fff; }
+    .card-front { background: #fff; position: relative; }
     .card-back { background: #f0f0f0; transform: rotateY(180deg); }
     .card-face img {
       width: 100%;
       max-height: 250px;
       margin-bottom: 15px;
       object-fit: contain;
+    }
+    .packet-indicator {
+      width: 50px; height: 50px;
+      position: absolute;
+      bottom: 10px; right: 10px;
+      display: flex; justify-content: center; align-items: center;
+      font-weight: bold; color: white;
+      border-radius: 8px;
+      font-size: 18px;
     }
     .answer-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
     .answer-buttons button {
@@ -80,6 +89,13 @@
     #score-screen button:hover { background: #875fb3; }
     .card-editor { margin-bottom: 10px; }
     .card-editor input { display: block; width: 95%; margin-bottom: 5px; }
+    .color-btn {
+      width: 60px; height: 35px; border: none; border-radius: 6px; cursor: pointer;
+      margin: 0 5px;
+    }
+    .digit-input {
+      width: 60px; height: 35px; border-radius: 6px; text-align: center; font-weight: bold; margin: 0 5px;
+    }
   </style>
 </head>
 <body>
@@ -119,10 +135,12 @@
           <div class="card-face card-front">
             <img id="card-image-front" alt="">
             <div id="card-question"></div>
+            <div class="packet-indicator" id="packet-indicator"></div>
           </div>
           <div class="card-face card-back">
             <img id="card-image-back" alt="">
             <div id="card-answer"></div>
+            <div class="packet-indicator" id="packet-indicator-back"></div>
           </div>
         </div>
       </div>
@@ -175,11 +193,11 @@
         document.getElementById("set-title").value = currentSet.title;
         document.getElementById("set-subject").value = currentSet.subject;
         document.getElementById("set-image").value = currentSet.image;
-        currentSet.cards.forEach(c => addCardEditor(c.question, c.answer, c.image, c.color, c.number));
+        currentSet.cards.forEach(c => addCardEditor(c.question, c.answer, c.image, c.color || '', c.digit || ''));
       } else { currentSet = null; }
     }
 
-    function addCardEditor(q='', a='', img='', color=null, number=null) {
+    function addCardEditor(q='', a='', img='', color='', digit='') {
       const div = document.createElement("div");
       div.className = "card-editor";
       div.innerHTML = `
@@ -188,18 +206,14 @@
         <input type="text" placeholder="URL image ou vide" value="${img}">
         <input type="file" accept="image/*" class="img-upload" style="display:none">
         <button class="btn-photo">📸 Galerie</button>
-        <button class="btn-color">🎨 Couleur</button>
-        <button class="btn-del-card">🗑️ Supprimer</button>
+        <input type="color" class="color-btn" value="${color}">
+        <input type="number" class="digit-input" placeholder="Chiffre" value="${digit}" min="1">
+        <button class="btn-del-card">🗑️ Supprimer cette carte</button>
         <hr>`;
       document.getElementById("cards-editor").appendChild(div);
 
       const imgInput = div.querySelector(".img-upload");
       const urlInput = div.children[2];
-      const colorBtn = div.querySelector(".btn-color");
-
-      // Persistance couleur + chiffre
-      if(color) colorBtn.style.background = color;
-      if(number) colorBtn.textContent = number;
 
       div.querySelector(".btn-photo").onclick = () => imgInput.click();
       imgInput.onchange = (e) => {
@@ -208,41 +222,6 @@
         const reader = new FileReader();
         reader.onload = (ev) => { urlInput.value = ev.target.result; };
         reader.readAsDataURL(file);
-      };
-
-      colorBtn.onclick = () => {
-        const colors = ["red","green","blue","yellow","orange","purple"];
-        const colorChoice = prompt("Choisir une couleur: " + colors.join(", "));
-        if(colorChoice && colors.includes(colorChoice.toLowerCase())){
-          let selectedColor = colorChoice.toLowerCase();
-          const numberBox = document.createElement("input");
-          numberBox.type = "text";
-          numberBox.placeholder = "ex:16";
-          numberBox.style.width = "50px";
-          numberBox.style.marginLeft = "5px";
-          numberBox.style.textAlign = "center";
-          numberBox.style.fontWeight = "bold";
-          numberBox.style.fontSize = "16px";
-
-          div.insertBefore(numberBox, div.querySelector(".btn-del-card"));
-          numberBox.focus();
-
-          numberBox.addEventListener("keydown", function(e){
-            if(e.key === "Enter"){
-              const value = numberBox.value.trim();
-              if(value){
-                colorBtn.style.background = selectedColor;
-                colorBtn.textContent = value;
-                numberBox.remove();
-              } else {
-                alert("Vous devez écrire un chiffre !");
-              }
-            }
-          });
-
-        } else {
-          alert("Couleur invalide ou non choisie.");
-        }
       };
 
       div.querySelector(".btn-del-card").onclick = () => div.remove();
@@ -257,9 +236,9 @@
         const q = div.children[0].value;
         const a = div.children[1].value;
         const img = div.children[2].value;
-        let color = div.querySelector(".btn-color").style.background || null;
-        let number = div.querySelector(".btn-color").textContent || null;
-        if(q && a) cards.push({ question: q, answer: a, image: img, color, number });
+        const color = div.querySelector(".color-btn").value;
+        const digit = div.querySelector(".digit-input").value;
+        if(q && a) cards.push({ question: q, answer: a, image: img, color, digit });
       });
       if(currentSet){
         currentSet.title = title; currentSet.subject = subject;
@@ -268,7 +247,6 @@
       saveSets(); currentSet = null; goHome();
     }
 
-    // --- RESTE DU CODE ORIGINAL ---
     function displaySets() {
       const list = document.getElementById("sets-list");
       list.innerHTML = "";
@@ -332,12 +310,29 @@
 
     function startGame(i){
       currentSet = sets[i];
-      currentCards = [...currentSet.cards];
-      for (let j = currentCards.length - 1; j > 0; j--) {
+
+      // Créer les paquets par couleur
+      const packets = {};
+      currentSet.cards.forEach(card => {
+        if(!packets[card.color]) packets[card.color] = [];
+        packets[card.color].push(card);
+      });
+
+      // Mélanger l’ordre des paquets
+      const colors = Object.keys(packets);
+      for (let j = colors.length - 1; j > 0; j--) {
         const k = Math.floor(Math.random() * (j + 1));
-        [currentCards[j], currentCards[k]] = [currentCards[k], currentCards[j]];
+        [colors[j], colors[k]] = [colors[k], colors[j]];
       }
-      currentIndex=0; errors=[];
+
+      // Construire currentCards : paquets mélangés, cartes intérieures intactes
+      currentCards = [];
+      colors.forEach(color => {
+        const sorted = packets[color].sort((a,b)=> (a.digit||0)-(b.digit||0));
+        currentCards.push(...sorted);
+      });
+
+      currentIndex = 0; errors=[];
       document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
       document.getElementById("game-screen").classList.remove("hidden");
       document.getElementById("game-title").textContent = currentSet.title;
@@ -350,6 +345,8 @@
       const backImg = document.getElementById("card-image-back");
       const frontFace = document.querySelector(".card-front");
       const backFace = document.querySelector(".card-back");
+      const indicatorFront = document.getElementById("packet-indicator");
+      const indicatorBack = document.getElementById("packet-indicator-back");
 
       document.getElementById("card-question").textContent = card.question;
       document.getElementById("card-answer").textContent = card.answer;
@@ -359,6 +356,19 @@
         backImg.src = card.image; backImg.style.display="block";
       } else {
         frontImg.style.display="none"; backImg.style.display="none";
+      }
+
+      // Afficher le paquet couleur + chiffre
+      if(card.color) {
+        indicatorFront.style.backgroundColor = card.color;
+        indicatorFront.textContent = card.digit || '';
+        indicatorBack.style.backgroundColor = card.color;
+        indicatorBack.textContent = card.digit || '';
+        indicatorFront.style.display = 'flex';
+        indicatorBack.style.display = 'flex';
+      } else {
+        indicatorFront.style.display = 'none';
+        indicatorBack.style.display = 'none';
       }
 
       function adjustFontSize(face){
@@ -404,21 +414,21 @@
       reader.readAsText(file);
     }
 
-    // --- NOUVEAU : Enter dans l'éditeur de cartes ---
     document.addEventListener("keydown", function(e) {
       if(e.key === "Enter") {
         const active = document.activeElement;
         if(active && active.tagName === "INPUT" && active.closest(".card-editor")) {
           const cardDiv = active.closest(".card-editor");
           const cardsEditor = document.getElementById("cards-editor");
-          const inputs = Array.from(cardDiv.querySelectorAll("input[type=text]"));
+          const inputs = Array.from(cardDiv.querySelectorAll("input[type=text], input[type=number]"));
           const lastCard = cardsEditor.lastElementChild === cardDiv;
           const index = inputs.indexOf(active);
           if(index !== -1){
             e.preventDefault();
-            if(index === 0) { inputs[1].focus(); }      // Question -> Réponse
-            else if(index === 1) { inputs[2].focus(); } // Réponse -> Image
-            else if(index === 2){
+            if(index === 0) { inputs[1].focus(); }
+            else if(index === 1) { inputs[2].focus(); }
+            else if(index === 2) { inputs[3].focus(); }
+            else if(index === 3){
               if(lastCard){ addCardEditor(); cardsEditor.lastElementChild.children[0].focus(); }
               else { const nextCard = cardDiv.nextElementSibling; if(nextCard) nextCard.querySelector("input").focus(); }
             }
@@ -427,7 +437,6 @@
       }
     });
 
-    // --- AJOUT CLAVIER PENDANT LE JEU ---
     document.addEventListener("keydown", function(e){
       const gameScreen = document.getElementById("game-screen");
       if(!gameScreen.classList.contains("hidden")){
