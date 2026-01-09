@@ -78,9 +78,8 @@
       background: #a18cd1; color: white; transition: 0.3s;
     }
     #score-screen button:hover { background: #875fb3; }
-    .card-editor { margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap:5px; }
-    .card-editor input[type=text] { flex: 1 0 150px; }
-    .card-editor button { padding: 5px 10px; border-radius: 8px; cursor: pointer; border:none; }
+    .card-editor { margin-bottom: 10px; }
+    .card-editor input { display: block; width: 95%; margin-bottom: 5px; }
   </style>
 </head>
 <body>
@@ -176,11 +175,11 @@
         document.getElementById("set-title").value = currentSet.title;
         document.getElementById("set-subject").value = currentSet.subject;
         document.getElementById("set-image").value = currentSet.image;
-        currentSet.cards.forEach(c => addCardEditor(c.question, c.answer, c.image));
+        currentSet.cards.forEach(c => addCardEditor(c.question, c.answer, c.image, c.color, c.number));
       } else { currentSet = null; }
     }
 
-    function addCardEditor(q='', a='', img='') {
+    function addCardEditor(q='', a='', img='', color=null, number=null) {
       const div = document.createElement("div");
       div.className = "card-editor";
       div.innerHTML = `
@@ -198,8 +197,11 @@
       const urlInput = div.children[2];
       const colorBtn = div.querySelector(".btn-color");
 
-      div.querySelector(".btn-photo").onclick = () => imgInput.click();
+      // Persistance couleur + chiffre
+      if(color) colorBtn.style.background = color;
+      if(number) colorBtn.textContent = number;
 
+      div.querySelector(".btn-photo").onclick = () => imgInput.click();
       imgInput.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -208,17 +210,11 @@
         reader.readAsDataURL(file);
       };
 
-      // --- BOUTON COULEUR + CHIFFRE ---
-      let selectedColor = null;
-      let selectedNumber = null;
-
       colorBtn.onclick = () => {
         const colors = ["red","green","blue","yellow","orange","purple"];
         const colorChoice = prompt("Choisir une couleur: " + colors.join(", "));
         if(colorChoice && colors.includes(colorChoice.toLowerCase())){
-          selectedColor = colorChoice.toLowerCase();
-
-          // CRÉER LE PETIT CARRÉ POUR LE NOMBRE
+          let selectedColor = colorChoice.toLowerCase();
           const numberBox = document.createElement("input");
           numberBox.type = "text";
           numberBox.placeholder = "ex:16";
@@ -231,16 +227,12 @@
           div.insertBefore(numberBox, div.querySelector(".btn-del-card"));
           numberBox.focus();
 
-          // Quand on appuie sur Entrée dans le carré
           numberBox.addEventListener("keydown", function(e){
             if(e.key === "Enter"){
               const value = numberBox.value.trim();
               if(value){
-                selectedNumber = value;
-                // Mettre le chiffre sur le bouton et colorier le bouton
                 colorBtn.style.background = selectedColor;
-                colorBtn.textContent = selectedNumber;
-                // Supprimer le carré
+                colorBtn.textContent = value;
                 numberBox.remove();
               } else {
                 alert("Vous devez écrire un chiffre !");
@@ -253,7 +245,6 @@
         }
       };
 
-      // SUPPRIMER LA CARTE
       div.querySelector(".btn-del-card").onclick = () => div.remove();
     }
 
@@ -277,7 +268,7 @@
       saveSets(); currentSet = null; goHome();
     }
 
-    // --- Fonctions pour jeu et score restent identiques ---
+    // --- RESTE DU CODE ORIGINAL ---
     function displaySets() {
       const list = document.getElementById("sets-list");
       list.innerHTML = "";
@@ -413,6 +404,7 @@
       reader.readAsText(file);
     }
 
+    // --- NOUVEAU : Enter dans l'éditeur de cartes ---
     document.addEventListener("keydown", function(e) {
       if(e.key === "Enter") {
         const active = document.activeElement;
@@ -424,8 +416,8 @@
           const index = inputs.indexOf(active);
           if(index !== -1){
             e.preventDefault();
-            if(index === 0) { inputs[1].focus(); }
-            else if(index === 1) { inputs[2].focus(); }
+            if(index === 0) { inputs[1].focus(); }      // Question -> Réponse
+            else if(index === 1) { inputs[2].focus(); } // Réponse -> Image
             else if(index === 2){
               if(lastCard){ addCardEditor(); cardsEditor.lastElementChild.children[0].focus(); }
               else { const nextCard = cardDiv.nextElementSibling; if(nextCard) nextCard.querySelector("input").focus(); }
@@ -435,6 +427,7 @@
       }
     });
 
+    // --- AJOUT CLAVIER PENDANT LE JEU ---
     document.addEventListener("keydown", function(e){
       const gameScreen = document.getElementById("game-screen");
       if(!gameScreen.classList.contains("hidden")){
