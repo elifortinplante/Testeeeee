@@ -78,18 +78,9 @@
       background: #a18cd1; color: white; transition: 0.3s;
     }
     #score-screen button:hover { background: #875fb3; }
-    .card-editor { margin-bottom: 10px; }
-    .card-editor input { display: block; width: 95%; margin-bottom: 5px; }
-
-    /* --- Styles carrés couleur et chiffre --- */
-    .color-square, .number-square {
-      width: 60px; height: 60px; position: absolute; top: 10px; left: 10px;
-      border-radius: 8px; display: none; align-items: center; justify-content: center;
-      font-weight: bold; color: white; font-size: 20px;
-    }
-    .number-square { top: 10px; left: auto; right: 10px; background: rgba(0,0,0,0.6); }
-    .color-button { position: relative; padding-right: 40px; margin: 5px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; }
-    .number-indicator { position: absolute; top: 5px; right: 5px; font-weight: bold; color: white; font-size: 16px; }
+    .card-editor { margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap:5px; }
+    .card-editor input[type=text] { flex: 1 0 150px; }
+    .card-editor button { padding: 5px 10px; border-radius: 8px; cursor: pointer; border:none; }
   </style>
 </head>
 <body>
@@ -124,28 +115,11 @@
     <!-- Écran jeu -->
     <div id="game-screen" class="hidden">
       <h2 id="game-title"></h2>
-
-      <!-- Boutons couleurs -->
-      <div id="color-buttons">
-        <button class="color-button" style="background:#f44336" onclick="chooseColor('red', this)">Rouge</button>
-        <button class="color-button" style="background:#2196f3" onclick="chooseColor('blue', this)">Bleu</button>
-        <button class="color-button" style="background:#4caf50" onclick="chooseColor('green', this)">Vert</button>
-      </div>
-
-      <!-- Boutons chiffres -->
-      <div id="number-buttons">
-        <button class="color-button" onclick="chooseNumber(1, this)">1</button>
-        <button class="color-button" onclick="chooseNumber(2, this)">2</button>
-        <button class="color-button" onclick="chooseNumber(3, this)">3</button>
-      </div>
-
       <div class="card-container">
         <div class="card" onclick="flipCard()">
           <div class="card-face card-front">
             <img id="card-image-front" alt="">
             <div id="card-question"></div>
-            <div class="color-square" id="color-square"></div>
-            <div class="number-square" id="number-square"></div>
           </div>
           <div class="card-face card-back">
             <img id="card-image-back" alt="">
@@ -176,11 +150,6 @@
     let currentIndex = 0;
     let errors = [];
 
-    let chosenColor = null;
-    let chosenNumber = null;
-    let currentColorButton = null;
-    let currentNumberButton = null;
-
     function saveSets() { localStorage.setItem("sets", JSON.stringify(sets)); }
 
     function goHome() {
@@ -189,48 +158,6 @@
       displaySets();
     }
 
-    function chooseColor(color, btn){
-      chosenColor = color;
-      currentColorButton = btn;
-      const colorSquare = document.getElementById("color-square");
-      colorSquare.style.background = color;
-      colorSquare.style.display = "flex";
-      setTimeout(() => {
-        colorSquare.style.display = "none";
-        updateButtonDisplay();
-      }, 1000);
-    }
-
-    function chooseNumber(num, btn){
-      if(!chosenColor){
-        alert("Choisis d'abord une couleur !");
-        return;
-      }
-      chosenNumber = num;
-      currentNumberButton = btn;
-      const numberSquare = document.getElementById("number-square");
-      numberSquare.textContent = num;
-      numberSquare.style.display = "flex";
-      setTimeout(() => {
-        numberSquare.style.display = "none";
-        updateButtonDisplay();
-      }, 1000);
-    }
-
-    function updateButtonDisplay(){
-      if(currentColorButton && currentNumberButton){
-        currentColorButton.style.background = chosenColor;
-        const indicator = document.createElement("span");
-        indicator.className = "number-indicator";
-        indicator.textContent = chosenNumber;
-        // retire l'ancien si existe
-        const old = currentColorButton.querySelector(".number-indicator");
-        if(old) old.remove();
-        currentColorButton.appendChild(indicator);
-      }
-    }
-
-    // --- Le reste du code existant pour cartes ---
     function showSetEditor(setIndex=null) {
       document.querySelectorAll(".container > div").forEach(div => div.classList.add("hidden"));
       document.getElementById("editor-screen").classList.remove("hidden");
@@ -262,12 +189,14 @@
         <input type="text" placeholder="URL image ou vide" value="${img}">
         <input type="file" accept="image/*" class="img-upload" style="display:none">
         <button class="btn-photo">📸 Galerie</button>
-        <button class="btn-del-card">🗑️ Supprimer cette carte</button>
+        <button class="btn-color">🎨 Couleur</button>
+        <button class="btn-del-card">🗑️ Supprimer</button>
         <hr>`;
       document.getElementById("cards-editor").appendChild(div);
 
       const imgInput = div.querySelector(".img-upload");
       const urlInput = div.children[2];
+      const colorBtn = div.querySelector(".btn-color");
 
       div.querySelector(".btn-photo").onclick = () => imgInput.click();
 
@@ -279,6 +208,52 @@
         reader.readAsDataURL(file);
       };
 
+      // --- BOUTON COULEUR + CHIFFRE ---
+      let selectedColor = null;
+      let selectedNumber = null;
+
+      colorBtn.onclick = () => {
+        const colors = ["red","green","blue","yellow","orange","purple"];
+        const colorChoice = prompt("Choisir une couleur: " + colors.join(", "));
+        if(colorChoice && colors.includes(colorChoice.toLowerCase())){
+          selectedColor = colorChoice.toLowerCase();
+
+          // CRÉER LE PETIT CARRÉ POUR LE NOMBRE
+          const numberBox = document.createElement("input");
+          numberBox.type = "text";
+          numberBox.placeholder = "ex:16";
+          numberBox.style.width = "50px";
+          numberBox.style.marginLeft = "5px";
+          numberBox.style.textAlign = "center";
+          numberBox.style.fontWeight = "bold";
+          numberBox.style.fontSize = "16px";
+
+          div.insertBefore(numberBox, div.querySelector(".btn-del-card"));
+          numberBox.focus();
+
+          // Quand on appuie sur Entrée dans le carré
+          numberBox.addEventListener("keydown", function(e){
+            if(e.key === "Enter"){
+              const value = numberBox.value.trim();
+              if(value){
+                selectedNumber = value;
+                // Mettre le chiffre sur le bouton et colorier le bouton
+                colorBtn.style.background = selectedColor;
+                colorBtn.textContent = selectedNumber;
+                // Supprimer le carré
+                numberBox.remove();
+              } else {
+                alert("Vous devez écrire un chiffre !");
+              }
+            }
+          });
+
+        } else {
+          alert("Couleur invalide ou non choisie.");
+        }
+      };
+
+      // SUPPRIMER LA CARTE
       div.querySelector(".btn-del-card").onclick = () => div.remove();
     }
 
@@ -291,7 +266,9 @@
         const q = div.children[0].value;
         const a = div.children[1].value;
         const img = div.children[2].value;
-        if(q && a) cards.push({ question: q, answer: a, image: img });
+        let color = div.querySelector(".btn-color").style.background || null;
+        let number = div.querySelector(".btn-color").textContent || null;
+        if(q && a) cards.push({ question: q, answer: a, image: img, color, number });
       });
       if(currentSet){
         currentSet.title = title; currentSet.subject = subject;
@@ -300,6 +277,7 @@
       saveSets(); currentSet = null; goHome();
     }
 
+    // --- Fonctions pour jeu et score restent identiques ---
     function displaySets() {
       const list = document.getElementById("sets-list");
       list.innerHTML = "";
@@ -369,7 +347,6 @@
         [currentCards[j], currentCards[k]] = [currentCards[k], currentCards[j]];
       }
       currentIndex=0; errors=[];
-      chosenColor=null; chosenNumber=null; currentColorButton=null; currentNumberButton=null;
       document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
       document.getElementById("game-screen").classList.remove("hidden");
       document.getElementById("game-title").textContent = currentSet.title;
@@ -436,7 +413,6 @@
       reader.readAsText(file);
     }
 
-    // --- NOUVEAU : Enter dans l'éditeur de cartes ---
     document.addEventListener("keydown", function(e) {
       if(e.key === "Enter") {
         const active = document.activeElement;
@@ -448,8 +424,8 @@
           const index = inputs.indexOf(active);
           if(index !== -1){
             e.preventDefault();
-            if(index === 0) { inputs[1].focus(); }      
-            else if(index === 1) { inputs[2].focus(); } 
+            if(index === 0) { inputs[1].focus(); }
+            else if(index === 1) { inputs[2].focus(); }
             else if(index === 2){
               if(lastCard){ addCardEditor(); cardsEditor.lastElementChild.children[0].focus(); }
               else { const nextCard = cardDiv.nextElementSibling; if(nextCard) nextCard.querySelector("input").focus(); }
@@ -459,7 +435,6 @@
       }
     });
 
-    // --- AJOUT CLAVIER PENDANT LE JEU ---
     document.addEventListener("keydown", function(e){
       const gameScreen = document.getElementById("game-screen");
       if(!gameScreen.classList.contains("hidden")){
